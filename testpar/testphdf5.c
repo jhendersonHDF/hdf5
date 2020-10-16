@@ -17,6 +17,8 @@
 
 #include "testphdf5.h"
 
+#define CUDA_SUPPORT_LOCAL
+
 #ifndef PATH_MAX
 #define PATH_MAX 512
 #endif /* !PATH_MAX */
@@ -350,6 +352,35 @@ main(int argc, char **argv)
 
     AddTest("props", test_file_properties, NULL, "Coll Metadata file property settings", PARATESTFILE);
 
+#ifdef CUDA_SUPPORT_LOCAL
+    printf("\n***************\n");
+    printf("\n My Cuda Tests \n");
+    printf("\n***************\n");
+    sleep(2);
+
+    AddTest("idsetw", dataset_writeInd_cuda, NULL,
+      "dataset independent write (cuda)", PARATESTFILE);
+    AddTest("idsetr", dataset_readInd_cuda, NULL,
+      "dataset independent read (cuda)", PARATESTFILE);
+
+    AddTest("cdsetw", dataset_writeAll_cuda, NULL,
+      "dataset collective write", PARATESTFILE);
+
+    // Use the original dataset_writeAll for testing readAll
+    AddTest("cdsetw", dataset_writeAll, NULL,
+      "dataset collective write", PARATESTFILE);
+    // AddTest("cdsetr", dataset_readAll_cuda, NULL,
+            // "dataset collective read", PARATESTFILE);
+
+    // AddTest("eidsetw", extend_writeInd_cuda, NULL,
+            // "extendible dataset independent write", PARATESTFILE);
+    // AddTest("eidsetr", extend_readInd_cuda, NULL,
+            // "extendible dataset independent read", PARATESTFILE);
+
+    // AddTest("eidsetw2", extend_writeInd2_cuda, NULL,
+            // "extendible dataset independent write #2", PARATESTFILE);
+
+#else
     AddTest("delete", test_delete, NULL, "MPI-IO VFD file delete", PARATESTFILE);
 
     AddTest("idsetw", dataset_writeInd, NULL, "dataset independent write", PARATESTFILE);
@@ -368,6 +399,7 @@ main(int argc, char **argv)
             PARATESTFILE);
     AddTest("fltread", test_filter_read, NULL, "parallel read of dataset written serially with filters",
             PARATESTFILE);
+#endif
 
 #ifdef H5_HAVE_FILTER_DEFLATE
     AddTest("cmpdsetr", compress_readAll, NULL, "compressed dataset collective read", PARATESTFILE);
