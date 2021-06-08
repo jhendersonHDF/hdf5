@@ -233,7 +233,7 @@ test_error_compat(void)
         TEST_ERROR;
     if (old_data != NULL)
         TEST_ERROR;
-    if (old_func2 == NULL)
+    if (!old_func2)
         TEST_ERROR;
 
     if (H5Eset_auto2(H5E_DEFAULT, old_func2, old_data) < 0)
@@ -303,7 +303,7 @@ test_error_compat(void)
         TEST_ERROR;
     if (old_data != NULL)
         TEST_ERROR;
-    if (old_func2 == NULL)
+    if (!old_func2)
         TEST_ERROR;
 
     /* Try the printing function. Dataset creation should fail because the file

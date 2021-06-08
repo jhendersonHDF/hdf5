@@ -17548,9 +17548,14 @@ main(void)
 
             nerrors += test_copy_same_file_named_datatype(fcpl_src, src_fapl);
 
-            /* Test with dataset opened in the file or not */
-            nerrors += test_copy_old_layout(fcpl_dst, dst_fapl, FALSE);
-            nerrors += test_copy_old_layout(fcpl_dst, dst_fapl, TRUE);
+            /* Check if current driver might modify the filename. Skip these tests
+             * if so, since the file is pre-generated.
+             */
+            if (!h5_driver_uses_modified_filename()) {
+                /* Test with dataset opened in the file or not */
+                nerrors += test_copy_old_layout(fcpl_dst, dst_fapl, FALSE);
+                nerrors += test_copy_old_layout(fcpl_dst, dst_fapl, TRUE);
+            }
 
             /* Test with dataset opened in the file or not */
             nerrors += test_copy_null_ref(fcpl_src, fcpl_dst, src_fapl, dst_fapl);

@@ -354,7 +354,7 @@ H5Pset_fapl_mpio(hid_t fapl_id, MPI_Comm comm, MPI_Info info)
         HGOTO_ERROR(H5E_PLIST, H5E_CANTSET, FAIL, "can't set MPI info object")
 
     /* duplication is done during driver setting. */
-    ret_value = H5P_set_driver(plist, H5FD_MPIO, NULL);
+    ret_value = H5P_set_driver(plist, H5FD_MPIO, NULL, NULL);
 
 done:
     FUNC_LEAVE_API(ret_value)

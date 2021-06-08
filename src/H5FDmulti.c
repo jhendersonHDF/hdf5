@@ -135,8 +135,11 @@ typedef struct H5FD_multi_dxpl_t {
 } H5FD_multi_dxpl_t;
 
 /* Private functions */
-static int compute_next(H5FD_multi_t *file);
-static int open_members(H5FD_multi_t *file);
+static herr_t H5FD_multi_populate_config(const H5FD_mem_t *memb_map, const hid_t *memb_fapl,
+                                         const char *const *memb_name, const haddr_t *memb_addr,
+                                         hbool_t relax, H5FD_multi_fapl_t *fa_out);
+static int    compute_next(H5FD_multi_t *file);
+static int    open_members(H5FD_multi_t *file);
 
 /* Callback prototypes */
 static herr_t  H5FD_multi_term(void);
@@ -423,14 +426,7 @@ H5Pset_fapl_multi(hid_t fapl_id, const H5FD_mem_t *memb_map, const hid_t *memb_f
                   const char *const *memb_name, const haddr_t *memb_addr, hbool_t relax)
 {
     H5FD_multi_fapl_t  fa;
-    H5FD_mem_t         mt, mmt;
-    H5FD_mem_t         _memb_map[H5FD_MEM_NTYPES];
-    hid_t              _memb_fapl[H5FD_MEM_NTYPES];
-    char               _memb_name[H5FD_MEM_NTYPES][16];
-    const char *       _memb_name_ptrs[H5FD_MEM_NTYPES];
-    haddr_t            _memb_addr[H5FD_MEM_NTYPES];
-    static const char *letters = "Xsbrglo";
-    static const char *func    = "H5FDset_fapl_multi"; /* Function Name for error reporting */
+    static const char *func = "H5FDset_fapl_multi"; /* Function Name for error reporting */
 
     /*NO TRACE*/
 
@@ -440,66 +436,9 @@ H5Pset_fapl_multi(hid_t fapl_id, const H5FD_mem_t *memb_map, const hid_t *memb_f
     /* Check arguments and supply default values */
     if (H5I_GENPROP_LST != H5Iget_type(fapl_id) || TRUE != H5Pisa_class(fapl_id, H5P_FILE_ACCESS))
         H5Epush_ret(func, H5E_ERR_CLS, H5E_PLIST, H5E_BADVALUE, "not an access list", -1);
-    if (!memb_map) {
-        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1))
-            _memb_map[mt] = H5FD_MEM_DEFAULT;
-        memb_map = _memb_map;
-    }
-    if (!memb_fapl) {
-        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1))
-            _memb_fapl[mt] = H5Pcreate(H5P_FILE_ACCESS);
-        memb_fapl = _memb_fapl;
-    }
-    if (!memb_name) {
-        assert(strlen(letters) == H5FD_MEM_NTYPES);
-        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
-            sprintf(_memb_name[mt], "%%s-%c.h5", letters[mt]);
-            _memb_name_ptrs[mt] = _memb_name[mt];
-        }
-        memb_name = _memb_name_ptrs;
-    }
-    if (!memb_addr) {
-        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1))
-            _memb_addr[mt] = (hsize_t)(mt ? (mt - 1) : 0) * (HADDR_MAX / (H5FD_MEM_NTYPES - 1));
-        memb_addr = _memb_addr;
-    }
+    if (H5FD_multi_populate_config(memb_map, memb_fapl, memb_name, memb_addr, relax, &fa) < 0)
+        H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_CANTSET, "can't setup driver configuration", -1);
 
-    for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
-        /* Map usage type */
-        mmt = memb_map[mt];
-        if (mmt < 0 || mmt >= H5FD_MEM_NTYPES)
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADRANGE, "file resource type out of range", -1);
-        if (H5FD_MEM_DEFAULT == mmt)
-            mmt = mt;
-
-        /*
-         * All members of MEMB_FAPL must be either defaults or actual file
-         * access property lists.
-         */
-        if (H5P_DEFAULT != memb_fapl[mmt] && TRUE != H5Pisa_class(memb_fapl[mmt], H5P_FILE_ACCESS))
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADVALUE, "file resource type incorrect", -1);
-
-        /* All names must be defined */
-        if (!memb_name[mmt] || !memb_name[mmt][0])
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADVALUE, "file resource type not set", -1);
-    }
-
-    /*
-     * Initialize driver specific information. No need to copy it into the FA
-     * struct since all members will be copied by H5Pset_driver().
-     */
-    memset(&fa, 0, sizeof(H5FD_multi_fapl_t));
-    memcpy(fa.memb_map, memb_map, H5FD_MEM_NTYPES * sizeof(H5FD_mem_t));
-    memcpy(fa.memb_fapl, memb_fapl, H5FD_MEM_NTYPES * sizeof(hid_t));
-    memcpy(fa.memb_name, memb_name, H5FD_MEM_NTYPES * sizeof(char *));
-    memcpy(fa.memb_addr, memb_addr, H5FD_MEM_NTYPES * sizeof(haddr_t));
-    fa.relax = relax;
-
-    /* Patch up H5P_DEFAULT property lists for members */
-    for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
-        if (fa.memb_fapl[mt] == H5P_DEFAULT)
-            fa.memb_fapl[mt] = H5Pcreate(H5P_FILE_ACCESS);
-    }
     return H5Pset_driver(fapl_id, H5FD_MULTI, &fa);
 }
 
@@ -564,6 +503,104 @@ H5Pget_fapl_multi(hid_t fapl_id, H5FD_mem_t *memb_map /*out*/, hid_t *memb_fapl 
 
     return 0;
 }
+
+/*-------------------------------------------------------------------------
+ * Function:    H5FD_multi_populate_config
+ *
+ * Purpose:    Populates a H5FD_multi_fapl_t structure with the provided
+ *             values, supplying defaults where values are not provided.
+ *
+ * Return:    Non-negative on success/Negative on failure
+ *
+ *-------------------------------------------------------------------------
+ */
+static herr_t
+H5FD_multi_populate_config(const H5FD_mem_t *memb_map, const hid_t *memb_fapl, const char *const *memb_name,
+                           const haddr_t *memb_addr, hbool_t relax, H5FD_multi_fapl_t *fa_out)
+{
+    static const char *func    = "H5FD_multi_populate_config"; /* Function Name for error reporting */
+    static const char *letters = "Xsbrglo";
+    static char        _memb_name_g[H5FD_MEM_NTYPES][16]; /* Static scratch buffer to store member names */
+    H5FD_mem_t         mt, mmt;
+    H5FD_mem_t         _memb_map[H5FD_MEM_NTYPES];
+    hid_t              _memb_fapl[H5FD_MEM_NTYPES];
+    const char *       _memb_name_ptrs[H5FD_MEM_NTYPES];
+    haddr_t            _memb_addr[H5FD_MEM_NTYPES];
+    herr_t             ret_value = 0;
+
+    assert(fa_out);
+
+    if (!memb_map) {
+        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1))
+            _memb_map[mt] = H5FD_MEM_DEFAULT;
+        memb_map = _memb_map;
+    }
+    if (!memb_fapl) {
+        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
+            _memb_fapl[mt] = H5Pcreate(H5P_FILE_ACCESS);
+            if (H5Pset_fapl_sec2(_memb_fapl[mt]) < 0)
+                H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_CANTSET,
+                            "can't set sec2 driver on member FAPL", -1);
+        }
+        memb_fapl = _memb_fapl;
+    }
+    if (!memb_name) {
+        assert(strlen(letters) == H5FD_MEM_NTYPES);
+        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
+            sprintf(_memb_name_g[mt], "%%s-%c.h5", letters[mt]);
+            _memb_name_ptrs[mt] = _memb_name_g[mt];
+        }
+        memb_name = _memb_name_ptrs;
+    }
+    if (!memb_addr) {
+        for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1))
+            _memb_addr[mt] = (hsize_t)(mt ? (mt - 1) : 0) * (HADDR_MAX / (H5FD_MEM_NTYPES - 1));
+        memb_addr = _memb_addr;
+    }
+
+    for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
+        /* Map usage type */
+        mmt = memb_map[mt];
+        if (mmt < 0 || mmt >= H5FD_MEM_NTYPES)
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADRANGE, "file resource type out of range", -1);
+        if (H5FD_MEM_DEFAULT == mmt)
+            mmt = mt;
+
+        /*
+         * All members of MEMB_FAPL must be either defaults or actual file
+         * access property lists.
+         */
+        if (H5P_DEFAULT != memb_fapl[mmt] && TRUE != H5Pisa_class(memb_fapl[mmt], H5P_FILE_ACCESS))
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADVALUE, "file resource type incorrect", -1);
+
+        /* All names must be defined */
+        if (!memb_name[mmt] || !memb_name[mmt][0])
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_BADVALUE, "file resource type not set", -1);
+    }
+
+    /*
+     * Initialize driver specific information. No need to copy it into the FA
+     * struct since all members will be copied by H5Pset_driver().
+     */
+    memset(fa_out, 0, sizeof(H5FD_multi_fapl_t));
+    memcpy(fa_out->memb_map, memb_map, H5FD_MEM_NTYPES * sizeof(H5FD_mem_t));
+    memcpy(fa_out->memb_fapl, memb_fapl, H5FD_MEM_NTYPES * sizeof(hid_t));
+    memcpy(fa_out->memb_name, memb_name, H5FD_MEM_NTYPES * sizeof(char *));
+    memcpy(fa_out->memb_addr, memb_addr, H5FD_MEM_NTYPES * sizeof(haddr_t));
+    fa_out->relax = relax;
+
+    /* Patch up H5P_DEFAULT property lists for members */
+    for (mt = H5FD_MEM_DEFAULT; mt < H5FD_MEM_NTYPES; mt = (H5FD_mem_t)(mt + 1)) {
+        if (fa_out->memb_fapl[mt] == H5P_DEFAULT) {
+            fa_out->memb_fapl[mt] = H5Pcreate(H5P_FILE_ACCESS);
+            if (H5Pset_fapl_sec2(fa_out->memb_fapl[mt]) < 0)
+                H5Epush_ret(func, H5E_ERR_CLS, H5E_INTERNAL, H5E_CANTSET,
+                            "can't set sec2 driver on member FAPL", -1);
+        }
+    }
+
+    return ret_value;
+} /* end H5FD_multi_populate_config() */
 
 /*-------------------------------------------------------------------------
  * Function:    H5FD_multi_sb_size
@@ -1010,12 +1047,17 @@ H5FD_multi_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr
      */
     if (NULL == (file = (H5FD_multi_t *)calloc((size_t)1, sizeof(H5FD_multi_t))))
         H5Epush_ret(func, H5E_ERR_CLS, H5E_RESOURCE, H5E_NOSPACE, "memory allocation failed", NULL);
-    if (H5P_FILE_ACCESS_DEFAULT == fapl_id || H5FD_MULTI != H5Pget_driver(fapl_id)) {
+    H5E_BEGIN_TRY
+    {
+        fa = (const H5FD_multi_fapl_t *)H5Pget_driver_info(fapl_id);
+    }
+    H5E_END_TRY;
+    if (!fa || (H5P_FILE_ACCESS_DEFAULT == fapl_id) || (H5FD_MULTI != H5Pget_driver(fapl_id))) {
         close_fapl = fapl_id = H5Pcreate(H5P_FILE_ACCESS);
         if (H5Pset_fapl_multi(fapl_id, NULL, NULL, NULL, NULL, TRUE) < 0)
-            H5Epush_goto(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTSET, "can't set property value", error)
+            H5Epush_goto(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTSET, "can't set property value", error) fa =
+                (const H5FD_multi_fapl_t *)H5Pget_driver_info(fapl_id);
     }
-    fa = (const H5FD_multi_fapl_t *)H5Pget_driver_info(fapl_id);
     assert(fa);
     ALL_MEMBERS (mt) {
         file->fa.memb_map[mt]  = fa->memb_map[mt];
@@ -2036,6 +2078,7 @@ H5FD_multi_delete(const char *filename, hid_t fapl_id)
     char                     full_filename[H5FD_MULT_MAX_FILE_NAME_LEN];
     int                      nchars;
     const H5FD_multi_fapl_t *fa;
+    H5FD_multi_fapl_t        default_fa;
     static const char *      func = "H5FD_multi_delete"; /* Function Name for error reporting    */
 
     /* Clear the error stack */
@@ -2043,11 +2086,17 @@ H5FD_multi_delete(const char *filename, hid_t fapl_id)
 
     assert(filename);
 
-    /* Quiet compiler */
-    (void)fapl_id;
-
     /* Get the driver info */
-    fa = (const H5FD_multi_fapl_t *)H5Pget_driver_info(fapl_id);
+    H5E_BEGIN_TRY
+    {
+        fa = (const H5FD_multi_fapl_t *)H5Pget_driver_info(fapl_id);
+    }
+    H5E_END_TRY;
+    if (!fa) {
+        if (H5FD_multi_populate_config(NULL, NULL, NULL, NULL, TRUE, &default_fa) < 0)
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_VFL, H5E_CANTSET, "can't setup driver configuration", -1);
+        fa = &default_fa;
+    }
     assert(fa);
 
     /* Delete each member file using the underlying fapl */

@@ -34,6 +34,13 @@
 #define H5G_FRIEND /* suppress error about including H5Gpkg */
 #include "H5Gpkg.h"
 
+/*
+ * This file needs to access private routines from the H5FD package.
+ */
+#define H5FD_FRIEND /* suppress error about including H5FDpkg */
+#define H5FD_TESTING
+#include "H5FDpkg.h"
+
 const char *FILENAME[] = {"ohdr", "ohdr_min_a", "ohdr_min_b", NULL};
 
 /* used for object header size comparison */
@@ -2051,11 +2058,15 @@ main(void)
     if (h5_verify_cached_stabs(FILENAME, fapl) < 0)
         TEST_ERROR
 
-    /* A test to exercise the re-read of the object header for SWMR access */
-    if (test_ohdr_swmr(TRUE) < 0)
-        TEST_ERROR
-    if (test_ohdr_swmr(FALSE) < 0)
-        TEST_ERROR
+    if (H5FD__supports_swmr_test(env_h5_drvr)) {
+        /* A test to exercise the re-read of the object header for SWMR access */
+        if (test_ohdr_swmr(TRUE) < 0)
+            TEST_ERROR
+        if (test_ohdr_swmr(FALSE) < 0)
+            TEST_ERROR
+    }
+    else
+        HDputs("Skipped SWMR tests for SWMR-incompatible VFD");
 
     /* Pop API context */
     if (api_ctx_pushed && H5CX_pop(FALSE) < 0)

@@ -1806,5 +1806,5 @@ test_h5o(void)
 void
 cleanup_h5o(void)
 {
-    HDremove(TEST_FILENAME);
+    H5Fdelete(TEST_FILENAME, H5P_DEFAULT);
 }

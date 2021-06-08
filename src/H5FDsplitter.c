@@ -358,7 +358,7 @@ H5Pset_fapl_splitter(hid_t fapl_id, H5FD_splitter_vfd_config_t *vfd_config)
         info->wo_fapl_id = vfd_config->wo_fapl_id;
     }
 
-    ret_value = H5P_set_driver(plist_ptr, H5FD_SPLITTER, info);
+    ret_value = H5P_set_driver(plist_ptr, H5FD_SPLITTER, info, NULL);
 
 done:
     if (info)
@@ -670,8 +670,7 @@ H5FD__splitter_open(const char *name, unsigned flags, hid_t splitter_fapl_id, ha
         HGOTO_ERROR(H5E_ARGS, H5E_BADRANGE, NULL, "bogus maxaddr")
     if (ADDR_OVERFLOW(maxaddr))
         HGOTO_ERROR(H5E_ARGS, H5E_OVERFLOW, NULL, "bogus maxaddr")
-    if ((H5P_FILE_ACCESS_DEFAULT == splitter_fapl_id) || (H5FD_SPLITTER != H5Pget_driver(splitter_fapl_id)))
-        /* presupposes that H5P_FILE_ACCESS_DEFAULT is not a splitter */
+    if (H5FD_SPLITTER != H5Pget_driver(splitter_fapl_id))
         HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, NULL, "driver is not splitter")
 
     file_ptr = (H5FD_splitter_t *)H5FL_CALLOC(H5FD_splitter_t);

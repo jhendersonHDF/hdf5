@@ -10135,6 +10135,11 @@ main(void)
     h5_reset();
     fapl        = h5_fileaccess();
     ExpressMode = GetTestExpress();
+
+    /* For the Direct I/O driver, skip intensive tests due to poor performance */
+    if (!HDstrcmp(envval, "direct"))
+        ExpressMode = 2;
+
     if (ExpressMode > 1)
         HDprintf("***Express test mode on.  Some tests may be skipped\n");
 

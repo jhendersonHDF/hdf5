@@ -528,7 +528,8 @@ h5_fixname_real(const char *base_name, hid_t fapl, const char *_suffix, char *fu
     const char *prefix = NULL;
     const char *env    = NULL; /* HDF5_DRIVER environment variable     */
     char *      ptr, last = '\0';
-    const char *suffix = _suffix;
+    const char *suffix             = _suffix;
+    hbool_t     driver_env_var_set = FALSE;
     size_t      i, j;
     hid_t       driver     = -1;
     int         isppdriver = 0; /* if the driver is MPI parallel */
@@ -538,6 +539,11 @@ h5_fixname_real(const char *base_name, hid_t fapl, const char *_suffix, char *fu
 
     HDmemset(fullname, 0, size);
 
+    /* Determine if driver is set by environment variable */
+    driver_env_var_set = (HDgetenv("HDF5_DRIVER") != NULL);
+    if (driver_env_var_set && (H5P_DEFAULT == fapl))
+        fapl = H5P_FILE_ACCESS_DEFAULT;
+
     /* figure out the suffix */
     if (H5P_DEFAULT != fapl) {
         if ((driver = H5Pget_driver(fapl)) < 0)
@@ -546,9 +552,9 @@ h5_fixname_real(const char *base_name, hid_t fapl, const char *_suffix, char *fu
         if (suffix) {
             if (H5FD_FAMILY == driver) {
                 if (subst_for_superblock)
-                    suffix = "00000.h5";
+                    suffix = "-000000.h5";
                 else
-                    suffix = nest_printf ? "%%05d.h5" : "%05d.h5";
+                    suffix = nest_printf ? "-%%06d.h5" : "-%06d.h5";
             }
             else if (H5FD_MULTI == driver) {
 
@@ -583,7 +589,7 @@ h5_fixname_real(const char *base_name, hid_t fapl, const char *_suffix, char *fu
     /* Must first check fapl is not H5P_DEFAULT (-1) because H5FD_XXX
      * could be of value -1 if it is not defined.
      */
-    isppdriver = H5P_DEFAULT != fapl && (H5FD_MPIO == driver);
+    isppdriver = ((H5P_DEFAULT != fapl) || driver_env_var_set) && (H5FD_MPIO == driver);
 
     /* Check HDF5_NOCLEANUP environment setting.
      * (The #ifdef is needed to prevent compile failure in case MPI is not
@@ -2289,3 +2295,61 @@ error:
     }
     return FAIL;
 } /* end h5_check_if_file_locking_enabled() */
+
+/*-------------------------------------------------------------------------
+ * Function:    h5_using_default_driver
+ *
+ * Purpose:     Checks if the specified VFD name matches the library's
+ *              default VFD. If `drv_name` is NULL, the HDF5_DRIVER
+ *              environment is checked instead (if it is set).
+ *
+ * Return:      TRUE/FALSE
+ *
+ *-------------------------------------------------------------------------
+ */
+hbool_t
+h5_using_default_driver(const char *drv_name)
+{
+    hbool_t ret_val = TRUE;
+
+    HDassert(H5_DEFAULT_VFD == H5FD_SEC2);
+
+    if (!drv_name)
+        drv_name = HDgetenv("HDF5_DRIVER");
+
+    if (drv_name)
+        return (!HDstrcmp(drv_name, "sec2") || !HDstrcmp(drv_name, "nomatch"));
+
+    return ret_val;
+}
+
+/*-------------------------------------------------------------------------
+ * Function:    h5_driver_uses_modified_filename
+ *
+ * Purpose:     Checks if the current VFD set by use of the HDF5_DRIVER
+ *              environment variable uses a modified filename. Examples
+ *              are the multi and family drivers.
+ *
+ *              This routine is helpful for skipping tests that use
+ *              pre-generated files. VFDs that use a modified filename will
+ *              not be able to find these files and those tests will fail.
+ *              Eventually, HDF5's testing framework should be modified to
+ *              not run VFD testing against tests that use pre-generated
+ *              files.
+ *
+ * Return:      TRUE/FALSE
+ *
+ *-------------------------------------------------------------------------
+ */
+hbool_t
+h5_driver_uses_modified_filename(void)
+{
+    hbool_t ret_val = FALSE;
+    char *  driver  = HDgetenv("HDF5_DRIVER");
+
+    if (driver) {
+        ret_val = !HDstrcmp(driver, "multi") || !HDstrcmp(driver, "split") || !HDstrcmp(driver, "family");
+    }
+
+    return ret_val;
+} /* end h5_driver_uses_modified_filename() */

@@ -348,7 +348,7 @@ H5Pset_fapl_log(hid_t fapl_id, const char *logfile, unsigned long long flags, si
 
     fa.flags    = flags;
     fa.buf_size = buf_size;
-    ret_value   = H5P_set_driver(plist, H5FD_LOG, &fa);
+    ret_value   = H5P_set_driver(plist, H5FD_LOG, &fa, NULL);
 
 done:
     if (fa.logfile)
