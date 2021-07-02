@@ -144,8 +144,8 @@ static int test_attach_detach(void);
 #define FOREIGN_FILE1 "test_ds_le.h5"
 #define FOREIGN_FILE2 "test_ds_be.h5"
 #endif
-#define FILENAME      "test_ds"
-#define FILEEXT       ".h5"
+#define FILENAME "test_ds"
+#define FILEEXT  ".h5"
 
 #define FILE1 "test_ds3.h5"
 #define FILE2 "test_ds4.h5"
@@ -167,7 +167,7 @@ int
 main(void)
 {
     hid_t file_id = H5I_INVALID_HID;
-    int nerrors = 0;
+    int   nerrors = 0;
 
     /* create file to be used in following tests */
     if ((file_id = create_test_file("1")) < 0) {
@@ -270,9 +270,9 @@ open_test_file(const char *fileext)
 herr_t
 create_char_dataset(hid_t fid, const char *dsidx, int fulldims)
 {
-    int     rank    = 3;
-    int     rankds  = 1;
-    hsize_t dims[3] = {DIM1_SIZE, DIM2_SIZE, DIM3_SIZE};
+    int     rank                = 3;
+    int     rankds              = 1;
+    hsize_t dims[3]             = {DIM1_SIZE, DIM2_SIZE, DIM3_SIZE};
     hsize_t s1_dim[1]           = {DIM1_SIZE};
     hsize_t s2_dim[1]           = {DIM2_SIZE};
     hsize_t s3_dim[1]           = {DIM3_SIZE};
@@ -324,9 +324,9 @@ create_char_dataset(hid_t fid, const char *dsidx, int fulldims)
 herr_t
 create_short_dataset(hid_t fid, const char *dsidx, int fulldims)
 {
-    int     rank    = 3;
-    int     rankds  = 1;
-    hsize_t dims[3] = {DIM1_SIZE, DIM2_SIZE, DIM3_SIZE};
+    int     rank                = 3;
+    int     rankds              = 1;
+    hsize_t dims[3]             = {DIM1_SIZE, DIM2_SIZE, DIM3_SIZE};
     hsize_t s1_dim[1]           = {DIM1_SIZE};
     hsize_t s2_dim[1]           = {DIM2_SIZE};
     hsize_t s3_dim[1]           = {DIM3_SIZE};
@@ -378,9 +378,9 @@ create_short_dataset(hid_t fid, const char *dsidx, int fulldims)
 herr_t
 create_int_dataset(hid_t fid, const char *dsidx, int fulldims)
 {
-    int     rank       = RANK;
-    int     rankds     = 1;
-    hsize_t dims[RANK] = {DIM1_SIZE, DIM2_SIZE};
+    int     rank                = RANK;
+    int     rankds              = 1;
+    hsize_t dims[RANK]          = {DIM1_SIZE, DIM2_SIZE};
     hsize_t s1_dim[1]           = {DIM1_SIZE};
     hsize_t s2_dim[1]           = {DIM2_SIZE};
     int     s1_wbuf[DIM1_SIZE]  = {10, 20, 30};
@@ -488,9 +488,9 @@ error:
 herr_t
 create_float_dataset(hid_t fid, const char *dsidx, int fulldims)
 {
-    int     rank       = RANK;
-    int     rankds     = 1;
-    hsize_t dims[RANK] = {DIM1_SIZE, DIM2_SIZE};
+    int     rank                = RANK;
+    int     rankds              = 1;
+    hsize_t dims[RANK]          = {DIM1_SIZE, DIM2_SIZE};
     hsize_t s1_dim[1]           = {DIM1_SIZE};
     hsize_t s2_dim[1]           = {DIM2_SIZE};
     float   s1_wbuf[DIM1_SIZE]  = {10, 20, 30};
