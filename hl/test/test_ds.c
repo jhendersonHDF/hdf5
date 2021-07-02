@@ -166,10 +166,15 @@ static int test_attach_detach(void);
 int
 main(void)
 {
+    hid_t file_id = H5I_INVALID_HID;
     int nerrors = 0;
 
     /* create file to be used in following tests */
-    if (create_test_file("1") < 0) {
+    if ((file_id = create_test_file("1")) < 0) {
+        nerrors = 1;
+        goto error;
+    }
+    if (H5Fclose(file_id) < 0) {
         nerrors = 1;
         goto error;
     }
@@ -184,7 +189,11 @@ main(void)
     nerrors += test_long_scalenames("1") < 0 ? 1 : 0;
     nerrors += test_float_scalenames("1") < 0 ? 1 : 0;
     nerrors += test_numberofscales("1") < 0 ? 1 : 0;
-    if (create_test_file("2") < 0) {
+    if ((file_id = create_test_file("2")) < 0) {
+        nerrors = 1;
+        goto error;
+    }
+    if (H5Fclose(file_id) < 0) {
         nerrors = 1;
         goto error;
     }

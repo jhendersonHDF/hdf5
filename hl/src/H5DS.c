@@ -432,6 +432,10 @@ H5DSattach_scale(hid_t did, hid_t dsid, unsigned int idx)
                 }
             } /* end else */
         }     /* end if */
+        else {
+            if (is_new_ref && H5Rdestroy(&nref_to_ds) < 0)
+                goto out;
+        }
 
         /* write the attribute with the new references */
         if (H5Awrite(aid, tid, buf) < 0)
@@ -1150,6 +1154,10 @@ out:
         if (ndsbuf) {
             HDfree(ndsbuf);
             ndsbuf = NULL;
+        }
+        if (ndsbuf_w) {
+            HDfree(ndsbuf_w);
+            ndsbuf_w = NULL;
         }
         if (dsbuf) {
             HDfree(dsbuf);
