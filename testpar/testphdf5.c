@@ -358,27 +358,23 @@ main(int argc, char **argv)
     printf("\n***************\n");
     sleep(2);
 
-    AddTest("idsetw", dataset_writeInd_cuda, NULL,
-      "dataset independent write (cuda)", PARATESTFILE);
-    AddTest("idsetr", dataset_readInd_cuda, NULL,
-      "dataset independent read (cuda)", PARATESTFILE);
+    AddTest("idsetw", dataset_writeInd_cuda, NULL, "dataset independent write (cuda)", PARATESTFILE);
+    AddTest("idsetr", dataset_readInd_cuda, NULL, "dataset independent read (cuda)", PARATESTFILE);
 
-    AddTest("cdsetw", dataset_writeAll_cuda, NULL,
-      "dataset collective write", PARATESTFILE);
+    AddTest("cdsetw", dataset_writeAll_cuda, NULL, "dataset collective write", PARATESTFILE);
 
     // Use the original dataset_writeAll for testing readAll
-    AddTest("cdsetw", dataset_writeAll, NULL,
-      "dataset collective write", PARATESTFILE);
+    AddTest("cdsetw", dataset_writeAll, NULL, "dataset collective write", PARATESTFILE);
     // AddTest("cdsetr", dataset_readAll_cuda, NULL,
-            // "dataset collective read", PARATESTFILE);
+    // "dataset collective read", PARATESTFILE);
 
     // AddTest("eidsetw", extend_writeInd_cuda, NULL,
-            // "extendible dataset independent write", PARATESTFILE);
+    // "extendible dataset independent write", PARATESTFILE);
     // AddTest("eidsetr", extend_readInd_cuda, NULL,
-            // "extendible dataset independent read", PARATESTFILE);
+    // "extendible dataset independent read", PARATESTFILE);
 
     // AddTest("eidsetw2", extend_writeInd2_cuda, NULL,
-            // "extendible dataset independent write #2", PARATESTFILE);
+    // "extendible dataset independent write #2", PARATESTFILE);
 
 #else
     AddTest("delete", test_delete, NULL, "MPI-IO VFD file delete", PARATESTFILE);

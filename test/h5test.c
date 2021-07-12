@@ -908,7 +908,8 @@ h5_get_vfd_fapl(hid_t fapl)
         /* POSIX (section 2) read() and write() system calls */
         if (H5Pset_fapl_sec2(fapl) < 0)
             goto error;
-    } else if(!HDstrcmp(tok, "gds")) {
+    }
+    else if (!HDstrcmp(tok, "gds")) {
         // if (H5Pset_fapl_gds(fapl) < 0)
         if (H5Pset_fapl_gds(fapl, 1024, 4096, 8 * 4096) < 0)
             goto error;

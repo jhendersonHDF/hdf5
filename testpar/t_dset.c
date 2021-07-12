@@ -30,7 +30,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-
 /*
  * The following are various utility routines used by the tests.
  */
@@ -218,50 +217,49 @@ dataset_print(hsize_t start[], hsize_t block[], DATATYPE *dataset)
     }
 }
 
-
 /*
  * Print the content of the dataset.
  */
 int
-dataset_vrfy(hsize_t start[], hsize_t count[], hsize_t stride[], hsize_t block[], DATATYPE *dataset, DATATYPE *original)
+dataset_vrfy(hsize_t start[], hsize_t count[], hsize_t stride[], hsize_t block[], DATATYPE *dataset,
+             DATATYPE *original)
 {
     hsize_t i, j;
-    int vrfyerrs;
+    int     vrfyerrs;
 
     /* print it if VERBOSE_MED */
-    if(VERBOSE_MED) {
-    HDprintf("dataset_vrfy dumping:::\n");
-    HDprintf("start(%lu, %lu), count(%lu, %lu), stride(%lu, %lu), block(%lu, %lu)\n",
-        (unsigned long)start[0], (unsigned long)start[1], (unsigned long)count[0], (unsigned long)count[1],
-        (unsigned long)stride[0], (unsigned long)stride[1], (unsigned long)block[0], (unsigned long)block[1]);
-    HDprintf("original values:\n");
-    dataset_print(start, block, original);
-    HDprintf("compared values:\n");
-    dataset_print(start, block, dataset);
+    if (VERBOSE_MED) {
+        HDprintf("dataset_vrfy dumping:::\n");
+        HDprintf("start(%lu, %lu), count(%lu, %lu), stride(%lu, %lu), block(%lu, %lu)\n",
+                 (unsigned long)start[0], (unsigned long)start[1], (unsigned long)count[0],
+                 (unsigned long)count[1], (unsigned long)stride[0], (unsigned long)stride[1],
+                 (unsigned long)block[0], (unsigned long)block[1]);
+        HDprintf("original values:\n");
+        dataset_print(start, block, original);
+        HDprintf("compared values:\n");
+        dataset_print(start, block, dataset);
     }
 
     vrfyerrs = 0;
-    for (i=0; i < block[0]; i++){
-    for (j=0; j < block[1]; j++){
-        if(*dataset != *original){
-        if(vrfyerrs++ < MAX_ERR_REPORT || VERBOSE_MED){
-            HDprintf("Dataset Verify failed at [%lu][%lu](row %lu, col %lu): expect %d, got %d\n",
-            (unsigned long)i, (unsigned long)j,
-            (unsigned long)(i+start[0]), (unsigned long)(j+start[1]),
-            *(original), *(dataset));
-        }
-        dataset++;
-        original++;
+    for (i = 0; i < block[0]; i++) {
+        for (j = 0; j < block[1]; j++) {
+            if (*dataset != *original) {
+                if (vrfyerrs++ < MAX_ERR_REPORT || VERBOSE_MED) {
+                    HDprintf("Dataset Verify failed at [%lu][%lu](row %lu, col %lu): expect %d, got %d\n",
+                             (unsigned long)i, (unsigned long)j, (unsigned long)(i + start[0]),
+                             (unsigned long)(j + start[1]), *(original), *(dataset));
+                }
+                dataset++;
+                original++;
+            }
         }
     }
-    }
-    if(vrfyerrs > MAX_ERR_REPORT && !VERBOSE_MED)
-    HDprintf("[more errors ...]\n");
-    if(vrfyerrs)
-    HDprintf("%d errors found in dataset_vrfy\n", vrfyerrs);
-    return(vrfyerrs);
+    if (vrfyerrs > MAX_ERR_REPORT && !VERBOSE_MED)
+        HDprintf("[more errors ...]\n");
+    if (vrfyerrs)
+        HDprintf("%d errors found in dataset_vrfy\n", vrfyerrs);
+    return (vrfyerrs);
 }
-
 
 /*
  * Part 1.a--Independent read/write for fixed dimension datasets.
@@ -278,46 +276,45 @@ dataset_vrfy(hsize_t start[], hsize_t count[], hsize_t stride[], hsize_t block[]
 void
 extend_writeInd_cuda(void)
 {
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t sid;           /* Dataspace ID */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2;    /* Dataset ID */
+    hid_t       fid;                /* HDF5 file ID */
+    hid_t       acc_tpl;            /* File access templates */
+    hid_t       sid;                /* Dataspace ID */
+    hid_t       file_dataspace;     /* File dataspace ID */
+    hid_t       mem_dataspace;      /* memory dataspace ID */
+    hid_t       dataset1, dataset2; /* Dataset ID */
     const char *filename;
-    hsize_t dims[RANK];       /* dataset dim sizes */
-    hsize_t max_dims[RANK] =
-        {H5S_UNLIMITED, H5S_UNLIMITED};    /* dataset maximum dim sizes */
-    DATATYPE    *data_array1 = NULL;        /* data buffer */
-    hsize_t    chunk_dims[RANK];        /* chunk sizes */
-    hid_t    dataset_pl;            /* dataset create prop. list */
+    hsize_t     dims[RANK];                                      /* dataset dim sizes */
+    hsize_t     max_dims[RANK] = {H5S_UNLIMITED, H5S_UNLIMITED}; /* dataset maximum dim sizes */
+    DATATYPE *  data_array1    = NULL;                           /* data buffer */
+    hsize_t     chunk_dims[RANK];                                /* chunk sizes */
+    hid_t       dataset_pl;                                      /* dataset create prop. list */
 
-    hsize_t    start[RANK];            /* for hyperslab setting */
-    hsize_t    count[RANK];            /* for hyperslab setting */
-    hsize_t    stride[RANK];            /* for hyperslab setting */
-    hsize_t     block[RANK];            /* for hyperslab setting */
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    hsize_t   start[RANK];      /* for hyperslab setting */
+    hsize_t   count[RANK];      /* for hyperslab setting */
+    hsize_t   stride[RANK];     /* for hyperslab setting */
+    hsize_t   block[RANK];      /* for hyperslab setting */
+    DATATYPE *cuda_buff = NULL; /* data buffer */
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Extend independent write test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Extend independent write test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* setup chunk-size. Make sure sizes are > 0 */
     chunk_dims[0] = chunkdim0;
     chunk_dims[1] = chunkdim1;
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
 
     /* -------------------
@@ -332,15 +329,15 @@ extend_writeInd_cuda(void)
      * the metadata cache and tests for cache bugs. -QAK
      */
     {
-        int mdc_nelmts;
+        int    mdc_nelmts;
         size_t rdcc_nelmts;
         size_t rdcc_nbytes;
         double rdcc_w0;
 
-        ret = H5Pget_cache(acc_tpl,&mdc_nelmts,&rdcc_nelmts,&rdcc_nbytes,&rdcc_w0);
+        ret = H5Pget_cache(acc_tpl, &mdc_nelmts, &rdcc_nelmts, &rdcc_nbytes, &rdcc_w0);
         VRFY((ret >= 0), "H5Pget_cache succeeded");
-        mdc_nelmts=4;
-        ret = H5Pset_cache(acc_tpl,mdc_nelmts,rdcc_nelmts,rdcc_nbytes,rdcc_w0);
+        mdc_nelmts = 4;
+        ret        = H5Pset_cache(acc_tpl, mdc_nelmts, rdcc_nelmts, rdcc_nbytes, rdcc_w0);
         VRFY((ret >= 0), "H5Pset_cache succeeded");
     }
 
@@ -352,14 +349,13 @@ extend_writeInd_cuda(void)
     ret = H5Pclose(acc_tpl);
     VRFY((ret >= 0), "");
 
-
     /* --------------------------------------------------------------
      * Define the dimensions of the overall datasets and create them.
      * ------------------------------------------------------------- */
 
     /* set up dataset storage chunk sizes and creation property list */
-    if(VERBOSE_MED)
-    HDprintf("chunks[]=%lu,%lu\n", (unsigned long)chunk_dims[0], (unsigned long)chunk_dims[1]);
+    if (VERBOSE_MED)
+        HDprintf("chunks[]=%lu,%lu\n", (unsigned long)chunk_dims[0], (unsigned long)chunk_dims[1]);
     dataset_pl = H5Pcreate(H5P_DATASET_CREATE);
     VRFY((dataset_pl >= 0), "H5Pcreate succeeded");
     ret = H5Pset_chunk(dataset_pl, RANK, chunk_dims);
@@ -368,7 +364,7 @@ extend_writeInd_cuda(void)
     /* setup dimensionality object */
     /* start out with no rows, extend it later. */
     dims[0] = dims[1] = 0;
-    sid = H5Screate_simple (RANK, dims, max_dims);
+    sid               = H5Screate_simple(RANK, dims, max_dims);
     VRFY((sid >= 0), "H5Screate_simple succeeded");
 
     /* create an extendible dataset collectively */
@@ -383,8 +379,6 @@ extend_writeInd_cuda(void)
     H5Sclose(sid);
     H5Pclose(dataset_pl);
 
-
-
     /* -------------------------
      * Test writing to dataset1
      * -------------------------*/
@@ -394,40 +388,37 @@ extend_writeInd_cuda(void)
     /* put some trivial data in the data_array */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED) {
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* Extend its current dim sizes before writing */
     dims[0] = dim0;
     dims[1] = dim1;
-    ret = H5Dset_extent(dataset1, dims);
+    ret     = H5Dset_extent(dataset1, dims);
     VRFY((ret >= 0), "H5Dset_extent succeeded");
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
-
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* write data independently */
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite succeeded");
 
     /* release resource */
     H5Sclose(file_dataspace);
     H5Sclose(mem_dataspace);
-
 
     /* -------------------------
      * Test writing to dataset2
@@ -438,13 +429,13 @@ extend_writeInd_cuda(void)
     /* put some trivial data in the data_array */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* Try write to dataset2 beyond its current dim sizes.  Should fail. */
@@ -453,15 +444,14 @@ extend_writeInd_cuda(void)
     H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset2);
+    file_dataspace = H5Dget_space(dataset2);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* write data independently.  Should fail. */
-    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret < 0), "H5Dwrite failed as expected");
 
     /* restore auto error reporting */
@@ -471,18 +461,17 @@ extend_writeInd_cuda(void)
     /* Extend dataset2 and try again.  Should succeed. */
     dims[0] = dim0;
     dims[1] = dim1;
-    ret = H5Dset_extent(dataset2, dims);
+    ret     = H5Dset_extent(dataset2, dims);
     VRFY((ret >= 0), "H5Dset_extent succeeded");
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset2);
+    file_dataspace = H5Dget_space(dataset2);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* write data independently */
-    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite succeeded");
 
     /* release resource */
@@ -490,7 +479,6 @@ extend_writeInd_cuda(void)
     VRFY((ret >= 0), "H5Sclose succeeded");
     ret = H5Sclose(mem_dataspace);
     VRFY((ret >= 0), "H5Sclose succeeded");
-
 
     /* close dataset collectively */
     ret = H5Dclose(dataset1);
@@ -502,60 +490,60 @@ extend_writeInd_cuda(void)
     H5Fclose(fid);
 
     /* release data buffers */
-    if(data_array1) HDfree(data_array1);
+    if (data_array1)
+        HDfree(data_array1);
     cudaFree(&cuda_buff);
 }
-
 
 void
 dataset_writeAll_cuda(void)
 {
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t xfer_plist;        /* Dataset transfer properties list */
-    hid_t sid;           /* Dataspace ID */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2, dataset3, dataset4; /* Dataset ID */
-    hid_t dataset5, dataset6, dataset7; /* Dataset ID */
-    hid_t datatype;        /* Datatype ID */
-    hsize_t dims[RANK];       /* dataset dim sizes */
-    DATATYPE *data_array1 = NULL;    /* data buffer */
+    hid_t       fid;                                    /* HDF5 file ID */
+    hid_t       acc_tpl;                                /* File access templates */
+    hid_t       xfer_plist;                             /* Dataset transfer properties list */
+    hid_t       sid;                                    /* Dataspace ID */
+    hid_t       file_dataspace;                         /* File dataspace ID */
+    hid_t       mem_dataspace;                          /* memory dataspace ID */
+    hid_t       dataset1, dataset2, dataset3, dataset4; /* Dataset ID */
+    hid_t       dataset5, dataset6, dataset7;           /* Dataset ID */
+    hid_t       datatype;                               /* Datatype ID */
+    hsize_t     dims[RANK];                             /* dataset dim sizes */
+    DATATYPE *  data_array1 = NULL;                     /* data buffer */
     const char *filename;
 
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    DATATYPE *cuda_buff = NULL; /* data buffer */
 
-    hsize_t start[RANK];            /* for hyperslab setting */
-    hsize_t count[RANK], stride[RANK];        /* for hyperslab setting */
-    hsize_t block[RANK];            /* for hyperslab setting */
+    hsize_t start[RANK];               /* for hyperslab setting */
+    hsize_t count[RANK], stride[RANK]; /* for hyperslab setting */
+    hsize_t block[RANK];               /* for hyperslab setting */
 
-    size_t  num_points;         /* for point selection */
-    hsize_t *coords = NULL;     /* for point selection */
-    hsize_t current_dims;       /* for point selection */
-    int i;
+    size_t   num_points;    /* for point selection */
+    hsize_t *coords = NULL; /* for point selection */
+    hsize_t  current_dims;  /* for point selection */
+    int      i;
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
     filename = GetTestParameters();
     SetTestVerbosity(VERBO_MED);
-    if(VERBOSE_MED)
-    HDprintf("Collective write test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Collective write test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* set up the coords array selection */
     num_points = dim1;
-    coords = (hsize_t *)HDmalloc(dim1 * RANK * sizeof(hsize_t));
+    coords     = (hsize_t *)HDmalloc(dim1 * RANK * sizeof(hsize_t));
     VRFY((coords != NULL), "coords malloc succeeded");
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
 
     /* -------------------
@@ -573,7 +561,6 @@ dataset_writeAll_cuda(void)
     ret = H5Pclose(acc_tpl);
     VRFY((ret >= 0), "");
 
-
     /* --------------------------
      * Define the dimensions of the overall datasets
      * and create the dataset
@@ -581,9 +568,8 @@ dataset_writeAll_cuda(void)
     /* setup 2-D dimensionality object */
     dims[0] = dim0;
     dims[1] = dim1;
-    sid = H5Screate_simple (RANK, dims, NULL);
+    sid     = H5Screate_simple(RANK, dims, NULL);
     VRFY((sid >= 0), "H5Screate_simple succeeded");
-
 
     /* create a dataset collectively */
     dataset1 = H5Dcreate2(fid, DATASETNAME1, H5T_NATIVE_INT, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -591,7 +577,7 @@ dataset_writeAll_cuda(void)
 
     /* create another dataset collectively */
     datatype = H5Tcopy(H5T_NATIVE_INT);
-    ret = H5Tset_order(datatype, H5T_ORDER_LE);
+    ret      = H5Tset_order(datatype, H5T_ORDER_LE);
     VRFY((ret >= 0), "H5Tset_order succeeded");
 
     dataset2 = H5Dcreate2(fid, DATASETNAME2, datatype, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -630,57 +616,54 @@ dataset_writeAll_cuda(void)
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYROW);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill the local slab with some trivial data */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "H5Pcreate xfer succeeded");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pset_dxpl_mpio succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
-
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* write data collectively */
     MESG("writeAll by Row");
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset1 succeeded");
 
     /* setup dimensions again to writeAll with zero rows for process 0 */
-    if(VERBOSE_MED)
-    HDprintf("writeAll by some with zero row\n");
+    if (VERBOSE_MED)
+        HDprintf("writeAll by some with zero row\n");
     slab_set(mpi_rank, mpi_size, start, count, stride, block, ZROW);
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
     /* need to make mem_dataspace to match for process 0 */
-    if(MAINPROCESS){
-    ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
-    VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
+        VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
     }
     MESG("writeAll by some with zero row");
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset1 by ZROW succeeded");
 
     /* release all temporary handles. */
@@ -696,67 +679,65 @@ dataset_writeAll_cuda(void)
     /* put some trivial data in the data_array */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill the local slab with some trivial data */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     printf("here: %s: %d\n", __FILE__, __LINE__);
     /* Raafat: Collective write: prob 1
         when using cuda_buff instead of data_array1: ret < 0
     */
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
     /* write data independently */
-    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset2 succeeded");
     printf("here: %s: %d\n", __FILE__, __LINE__);
 
     /* setup dimensions again to writeAll with zero columns for process 0 */
-    if(VERBOSE_MED)
-    HDprintf("writeAll by some with zero col\n");
+    if (VERBOSE_MED)
+        HDprintf("writeAll by some with zero col\n");
     slab_set(mpi_rank, mpi_size, start, count, stride, block, ZCOL);
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
     /* need to make mem_dataspace to match for process 0 */
-    if(MAINPROCESS){
-    ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
-    VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
+        VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
     }
     /* Raafat: Collective write: prob 2
         when using cuda_buff instead of data_array1: ret < 0
     */
     MESG("writeAll by some with zero col");
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset1 by ZCOL succeeded");
 
     /* release all temporary handles. */
@@ -766,16 +747,15 @@ dataset_writeAll_cuda(void)
     H5Sclose(mem_dataspace);
     H5Pclose(xfer_plist);
 
-
     /* Dataset3: each process takes a block of rows, except process zero uses "none" selection. */
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYROW);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset3);
+    file_dataspace = H5Dget_space(dataset3);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
-    if(MAINPROCESS) {
-    ret = H5Sselect_none(file_dataspace);
-    VRFY((ret >= 0), "H5Sselect_none file_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_none(file_dataspace);
+        VRFY((ret >= 0), "H5Sselect_none file_dataspace succeeded");
     } /* end if */
     else {
         ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
@@ -783,37 +763,36 @@ dataset_writeAll_cuda(void)
     } /* end else */
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
-    if(MAINPROCESS) {
-    ret = H5Sselect_none(mem_dataspace);
-    VRFY((ret >= 0), "H5Sselect_none mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_none(mem_dataspace);
+        VRFY((ret >= 0), "H5Sselect_none mem_dataspace succeeded");
     } /* end if */
 
     /* fill the local slab with some trivial data */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED) {
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     } /* end if */
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
-   cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* write data collectively */
     MESG("writeAll with none");
-    ret = H5Dwrite(dataset3, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset3, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset3 succeeded");
 
     /* write data collectively (with datatype conversion) */
@@ -822,8 +801,7 @@ dataset_writeAll_cuda(void)
         when using cuda_buff instead of data_array1: Segmentation fault
         change H5T_NATIVE_UCHAR to H5T_NATIVE_INT make it work
     */
-    ret = H5Dwrite(dataset3, H5T_NATIVE_UCHAR, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset3, H5T_NATIVE_UCHAR, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset3 succeeded");
 
     /* release all temporary handles. */
@@ -837,11 +815,11 @@ dataset_writeAll_cuda(void)
     /* Additionally, these are in a scalar dataspace */
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset4);
+    file_dataspace = H5Dget_space(dataset4);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
-    if(MAINPROCESS) {
-    ret = H5Sselect_none(file_dataspace);
-    VRFY((ret >= 0), "H5Sselect_all file_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_none(file_dataspace);
+        VRFY((ret >= 0), "H5Sselect_all file_dataspace succeeded");
     } /* end if */
     else {
         ret = H5Sselect_all(file_dataspace);
@@ -851,9 +829,9 @@ dataset_writeAll_cuda(void)
     /* create a memory dataspace independently */
     mem_dataspace = H5Screate(H5S_SCALAR);
     VRFY((mem_dataspace >= 0), "");
-    if(MAINPROCESS) {
-    ret = H5Sselect_none(mem_dataspace);
-    VRFY((ret >= 0), "H5Sselect_all mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_none(mem_dataspace);
+        VRFY((ret >= 0), "H5Sselect_all mem_dataspace succeeded");
     } /* end if */
     else {
         ret = H5Sselect_all(mem_dataspace);
@@ -863,29 +841,27 @@ dataset_writeAll_cuda(void)
     /* fill the local slab with some trivial data */
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED) {
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     } /* end if */
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* write data collectively */
     MESG("writeAll with scalar dataspace");
-    ret = H5Dwrite(dataset4, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset4, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset4 succeeded");
-
 
     /* Raafat: Collective write: prob 4
         when using cuda_buff instead of data_array1: Segmentation fault
@@ -893,8 +869,7 @@ dataset_writeAll_cuda(void)
     */
     /* write data collectively (with datatype conversion) */
     MESG("writeAll with scalar dataspace");
-    ret = H5Dwrite(dataset4, H5T_NATIVE_UCHAR, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset4, H5T_NATIVE_UCHAR, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset4 succeeded");
 
     /* release all temporary handles. */
@@ -902,65 +877,62 @@ dataset_writeAll_cuda(void)
     H5Sclose(mem_dataspace);
     H5Pclose(xfer_plist);
 
-
-    if(data_array1) free(data_array1);
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    if (data_array1)
+        free(data_array1);
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 malloc succeeded");
 
-
     cudaFree(&cuda_buff);
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
-    block[0] = 1;
-    block[1] = dim1;
+    block[0]  = 1;
+    block[1]  = dim1;
     stride[0] = 1;
     stride[1] = dim1;
-    count[0] = 1;
-    count[1] = 1;
-    start[0] = dim0/mpi_size * mpi_rank;
-    start[1] = 0;
+    count[0]  = 1;
+    count[1]  = 1;
+    start[0]  = dim0 / mpi_size * mpi_rank;
+    start[1]  = 0;
 
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     /* Dataset5: point selection in File - Hyperslab selection in Memory*/
     /* create a file dataspace independently */
-    point_set (start, count, stride, block, num_points, coords, OUT_OF_ORDER);
-    file_dataspace = H5Dget_space (dataset5);
+    point_set(start, count, stride, block, num_points, coords, OUT_OF_ORDER);
+    file_dataspace = H5Dget_space(dataset5);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(file_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
-    start[0] = 0;
-    start[1] = 0;
-    mem_dataspace = H5Dget_space (dataset5);
+    start[0]      = 0;
+    start[1]      = 0;
+    mem_dataspace = H5Dget_space(dataset5);
     VRFY((mem_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
-
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* Raafat: Collective write: prob 5
         when using cuda_buff instead of data_array1: ret < 0
     */
     /* write data collectively */
-    ret = H5Dwrite(dataset5, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                   xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset5, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     H5Eprint2(H5E_DEFAULT, stderr);
     VRFY((ret >= 0), "H5Dwrite dataset5 succeeded");
 
@@ -971,38 +943,37 @@ dataset_writeAll_cuda(void)
 
     /* Dataset6: point selection in File - Point selection in Memory*/
     /* create a file dataspace independently */
-    start[0] = dim0/mpi_size * mpi_rank;
+    start[0] = dim0 / mpi_size * mpi_rank;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, OUT_OF_ORDER);
-    file_dataspace = H5Dget_space (dataset6);
+    point_set(start, count, stride, block, num_points, coords, OUT_OF_ORDER);
+    file_dataspace = H5Dget_space(dataset6);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(file_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     start[0] = 0;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, IN_ORDER);
-    mem_dataspace = H5Dget_space (dataset6);
+    point_set(start, count, stride, block, num_points, coords, IN_ORDER);
+    mem_dataspace = H5Dget_space(dataset6);
     VRFY((mem_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(mem_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     /* Raafat: Collective write: prob 6
         when using cuda_buff instead of data_array1: ret < 0
     */
     /* write data collectively */
-    ret = H5Dwrite(dataset6, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                   xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset6, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset6 succeeded");
 
     /* release all temporary handles. */
@@ -1012,34 +983,33 @@ dataset_writeAll_cuda(void)
 
     /* Dataset7: point selection in File - All selection in Memory*/
     /* create a file dataspace independently */
-    start[0] = dim0/mpi_size * mpi_rank;
+    start[0] = dim0 / mpi_size * mpi_rank;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, IN_ORDER);
-    file_dataspace = H5Dget_space (dataset7);
+    point_set(start, count, stride, block, num_points, coords, IN_ORDER);
+    file_dataspace = H5Dget_space(dataset7);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(file_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
-    current_dims = num_points;
-    mem_dataspace = H5Screate_simple (1, &current_dims, NULL);
+    current_dims  = num_points;
+    mem_dataspace = H5Screate_simple(1, &current_dims, NULL);
     VRFY((mem_dataspace >= 0), "mem_dataspace create succeeded");
 
     ret = H5Sselect_all(mem_dataspace);
     VRFY((ret >= 0), "H5Sselect_all succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     /* write data collectively */
-    ret = H5Dwrite(dataset7, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                   xfer_plist, cuda_buff);
+    ret = H5Dwrite(dataset7, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset7 succeeded");
 
     /* release all temporary handles. */
@@ -1069,57 +1039,59 @@ dataset_writeAll_cuda(void)
     H5Fclose(fid);
 
     /* release data buffers */
-    if(coords) HDfree(coords);
-    if(data_array1) HDfree(data_array1);
+    if (coords)
+        HDfree(coords);
+    if (data_array1)
+        HDfree(data_array1);
     cudaFree(&cuda_buff);
 }
 
 void
 dataset_readAll_cuda(void)
 {
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t xfer_plist;        /* Dataset transfer properties list */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2, dataset5, dataset6, dataset7; /* Dataset ID */
-    DATATYPE *data_array1 = NULL;    /* data buffer */
-    DATATYPE *data_origin1 = NULL;     /* expected data buffer */
+    hid_t       fid;                                              /* HDF5 file ID */
+    hid_t       acc_tpl;                                          /* File access templates */
+    hid_t       xfer_plist;                                       /* Dataset transfer properties list */
+    hid_t       file_dataspace;                                   /* File dataspace ID */
+    hid_t       mem_dataspace;                                    /* memory dataspace ID */
+    hid_t       dataset1, dataset2, dataset5, dataset6, dataset7; /* Dataset ID */
+    DATATYPE *  data_array1  = NULL;                              /* data buffer */
+    DATATYPE *  data_origin1 = NULL;                              /* expected data buffer */
     const char *filename;
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    DATATYPE *  cuda_buff = NULL; /* data buffer */
 
-    hsize_t start[RANK];            /* for hyperslab setting */
-    hsize_t count[RANK], stride[RANK];        /* for hyperslab setting */
-    hsize_t block[RANK];            /* for hyperslab setting */
+    hsize_t start[RANK];               /* for hyperslab setting */
+    hsize_t count[RANK], stride[RANK]; /* for hyperslab setting */
+    hsize_t block[RANK];               /* for hyperslab setting */
 
-    size_t num_points;          /* for point selection */
-    hsize_t *coords = NULL;     /* for point selection */
-    hsize_t current_dims;       /* for point selection */
-    int i,j,k;
+    size_t   num_points;    /* for point selection */
+    hsize_t *coords = NULL; /* for point selection */
+    hsize_t  current_dims;  /* for point selection */
+    int      i, j, k;
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Collective read test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Collective read test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* set up the coords array selection */
     num_points = dim1;
-    coords = (hsize_t *)HDmalloc(dim0 * dim1 * RANK * sizeof(hsize_t));
+    coords     = (hsize_t *)HDmalloc(dim0 * dim1 * RANK * sizeof(hsize_t));
     VRFY((coords != NULL), "coords malloc succeeded");
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
-    data_origin1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_origin1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_origin1 != NULL), "data_origin1 HDmalloc succeeded");
 
     /* -------------------
@@ -1130,13 +1102,12 @@ dataset_readAll_cuda(void)
     VRFY((acc_tpl >= 0), "");
 
     /* open the file collectively */
-    fid=H5Fopen(filename,H5F_ACC_RDONLY,acc_tpl);
+    fid = H5Fopen(filename, H5F_ACC_RDONLY, acc_tpl);
     VRFY((fid >= 0), "H5Fopen succeeded");
 
     /* Release file-access template */
     ret = H5Pclose(acc_tpl);
     VRFY((ret >= 0), "");
-
 
     /* --------------------------
      * Open the datasets in it
@@ -1165,69 +1136,68 @@ dataset_readAll_cuda(void)
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYCOL);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill dataset with test data */
     dataset_fill(start, block, data_origin1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_origin1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_origin1);
     }
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-         ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-         VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
     // Raafat: Collective read prob 1
     /* read data collectively */
-    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset1 succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* setup dimensions again to readAll with zero columns for process 0 */
-    if(VERBOSE_MED)
-    HDprintf("readAll by some with zero col\n");
+    if (VERBOSE_MED)
+        HDprintf("readAll by some with zero col\n");
     slab_set(mpi_rank, mpi_size, start, count, stride, block, ZCOL);
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
     /* need to make mem_dataspace to match for process 0 */
-    if(MAINPROCESS){
-    ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
-    VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
+        VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
     }
     MESG("readAll by some with zero col");
 
-
     // Raafat: Collective read prob 2
-    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset1 by ZCOL succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* release all temporary handles. */
     /* Could have used them for dataset2 but it is cleaner */
@@ -1240,235 +1210,241 @@ dataset_readAll_cuda(void)
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYROW);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill dataset with test data */
     dataset_fill(start, block, data_origin1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_origin1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_origin1);
     }
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     /* read data collectively */
-    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset2 succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* setup dimensions again to readAll with zero rows for process 0 */
-    if(VERBOSE_MED)
-    HDprintf("readAll by some with zero row\n");
+    if (VERBOSE_MED)
+        HDprintf("readAll by some with zero row\n");
     slab_set(mpi_rank, mpi_size, start, count, stride, block, ZROW);
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
     /* need to make mem_dataspace to match for process 0 */
-    if(MAINPROCESS){
-    ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
-    VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
+        VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
     }
     MESG("readAll by some with zero row");
-    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        xfer_plist, cuda_buff);
+    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset1 by ZROW succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* release all temporary handles. */
     H5Sclose(file_dataspace);
     H5Sclose(mem_dataspace);
     H5Pclose(xfer_plist);
 
-    if(data_array1) free(data_array1);
-    if(data_origin1) free(data_origin1);
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    if (data_array1)
+        free(data_array1);
+    if (data_origin1)
+        free(data_origin1);
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 malloc succeeded");
-    data_origin1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_origin1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_origin1 != NULL), "data_origin1 malloc succeeded");
 
-    if(NULL != cuda_buff) cudaFree(&cuda_buff);
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    if (NULL != cuda_buff)
+        cudaFree(&cuda_buff);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
-    block[0] = 1;
-    block[1] = dim1;
+    block[0]  = 1;
+    block[1]  = dim1;
     stride[0] = 1;
     stride[1] = dim1;
-    count[0] = 1;
-    count[1] = 1;
-    start[0] = dim0/mpi_size * mpi_rank;
-    start[1] = 0;
+    count[0]  = 1;
+    count[1]  = 1;
+    start[0]  = dim0 / mpi_size * mpi_rank;
+    start[1]  = 0;
 
     dataset_fill(start, block, data_origin1);
     MESG("data_array initialized");
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_origin1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_origin1);
     }
 
     /* Dataset5: point selection in memory - Hyperslab selection in file*/
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset5);
+    file_dataspace = H5Dget_space(dataset5);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     start[0] = 0;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, OUT_OF_ORDER);
-    mem_dataspace = H5Dget_space (dataset5);
+    point_set(start, count, stride, block, num_points, coords, OUT_OF_ORDER);
+    mem_dataspace = H5Dget_space(dataset5);
     VRFY((mem_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(mem_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
-
 
     // Raafat: Collective read prob 3
     /* read data collectively */
-    ret = H5Dread(dataset5, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                  xfer_plist, cuda_buff);
+    ret = H5Dread(dataset5, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset5 succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* release all temporary handles. */
     H5Sclose(file_dataspace);
     H5Sclose(mem_dataspace);
     H5Pclose(xfer_plist);
 
-
-    if(data_array1) free(data_array1);
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    if (data_array1)
+        free(data_array1);
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 malloc succeeded");
 
-    if(NULL != cuda_buff) cudaFree(&cuda_buff);
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    if (NULL != cuda_buff)
+        cudaFree(&cuda_buff);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
     /* Dataset6: point selection in File - Point selection in Memory*/
     /* create a file dataspace independently */
-    start[0] = dim0/mpi_size * mpi_rank;
+    start[0] = dim0 / mpi_size * mpi_rank;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, IN_ORDER);
-    file_dataspace = H5Dget_space (dataset6);
+    point_set(start, count, stride, block, num_points, coords, IN_ORDER);
+    file_dataspace = H5Dget_space(dataset6);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(file_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     start[0] = 0;
     start[1] = 0;
-    point_set (start, count, stride, block, num_points, coords, OUT_OF_ORDER);
-    mem_dataspace = H5Dget_space (dataset6);
+    point_set(start, count, stride, block, num_points, coords, OUT_OF_ORDER);
+    mem_dataspace = H5Dget_space(dataset6);
     VRFY((mem_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(mem_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     // Raafat: Collective read prob 4
     /* read data collectively */
-    ret = H5Dread(dataset6, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                  xfer_plist, cuda_buff);
+    ret = H5Dread(dataset6, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset6 succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* release all temporary handles. */
     H5Sclose(file_dataspace);
     H5Sclose(mem_dataspace);
     H5Pclose(xfer_plist);
 
-    if(data_array1) free(data_array1);
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    if (data_array1)
+        free(data_array1);
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 malloc succeeded");
 
-    if(NULL != cuda_buff) cudaFree(&cuda_buff);
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    if (NULL != cuda_buff)
+        cudaFree(&cuda_buff);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
     /* Dataset7: point selection in memory - All selection in file*/
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset7);
+    file_dataspace = H5Dget_space(dataset7);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_all(file_dataspace);
     VRFY((ret >= 0), "H5Sselect_all succeeded");
 
     num_points = dim0 * dim1;
-    k=0;
-    for (i=0 ; i<dim0; i++) {
-        for (j=0 ; j<dim1; j++) {
+    k          = 0;
+    for (i = 0; i < dim0; i++) {
+        for (j = 0; j < dim1; j++) {
             coords[k++] = i;
             coords[k++] = j;
         }
     }
-    mem_dataspace = H5Dget_space (dataset7);
+    mem_dataspace = H5Dget_space(dataset7);
     VRFY((mem_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_elements(mem_dataspace, H5S_SELECT_SET, num_points, coords);
     VRFY((ret >= 0), "H5Sselect_elements succeeded");
 
     /* set up the collective transfer properties list */
-    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     VRFY((xfer_plist >= 0), "");
     ret = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
     VRFY((ret >= 0), "H5Pcreate xfer succeeded");
-    if(dxfer_coll_type == DXFER_INDEPENDENT_IO) {
-        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist,H5FD_MPIO_INDIVIDUAL_IO);
-        VRFY((ret>= 0),"set independent IO collectively succeeded");
+    if (dxfer_coll_type == DXFER_INDEPENDENT_IO) {
+        ret = H5Pset_dxpl_mpio_collective_opt(xfer_plist, H5FD_MPIO_INDIVIDUAL_IO);
+        VRFY((ret >= 0), "set independent IO collectively succeeded");
     }
 
     /* read data collectively */
-    ret = H5Dread(dataset7, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-                  xfer_plist, cuda_buff);
+    ret = H5Dread(dataset7, H5T_NATIVE_INT, mem_dataspace, file_dataspace, xfer_plist, cuda_buff);
     VRFY((ret >= 0), "H5Dread dataset7 succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
 
-    start[0] = dim0/mpi_size * mpi_rank;
+    start[0] = dim0 / mpi_size * mpi_rank;
     start[1] = 0;
-    ret = dataset_vrfy(start, count, stride, block, data_array1+(dim0/mpi_size * dim1 * mpi_rank), data_origin1);
-    if(ret) nerrors++;
+    ret      = dataset_vrfy(start, count, stride, block, data_array1 + (dim0 / mpi_size * dim1 * mpi_rank),
+                       data_origin1);
+    if (ret)
+        nerrors++;
 
     /* release all temporary handles. */
     H5Sclose(file_dataspace);
@@ -1493,46 +1469,50 @@ dataset_readAll_cuda(void)
     H5Fclose(fid);
 
     /* release data buffers */
-    if(coords) HDfree(coords);
-    if(data_array1) HDfree(data_array1);
-    if(data_origin1) HDfree(data_origin1);
-    if(NULL != cuda_buff) cudaFree(&cuda_buff);
+    if (coords)
+        HDfree(coords);
+    if (data_array1)
+        HDfree(data_array1);
+    if (data_origin1)
+        HDfree(data_origin1);
+    if (NULL != cuda_buff)
+        cudaFree(&cuda_buff);
 }
 
 void
 dataset_writeInd_cuda(void)
 {
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t sid;           /* Dataspace ID */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2;    /* Dataset ID */
-    hsize_t dims[RANK];       /* dataset dim sizes */
-    DATATYPE *data_array1 = NULL;    /* data buffer */
+    hid_t       fid;                /* HDF5 file ID */
+    hid_t       acc_tpl;            /* File access templates */
+    hid_t       sid;                /* Dataspace ID */
+    hid_t       file_dataspace;     /* File dataspace ID */
+    hid_t       mem_dataspace;      /* memory dataspace ID */
+    hid_t       dataset1, dataset2; /* Dataset ID */
+    hsize_t     dims[RANK];         /* dataset dim sizes */
+    DATATYPE *  data_array1 = NULL; /* data buffer */
     const char *filename;
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    DATATYPE *  cuda_buff = NULL; /* data buffer */
 
-    hsize_t   start[RANK];            /* for hyperslab setting */
-    hsize_t count[RANK], stride[RANK];        /* for hyperslab setting */
-    hsize_t block[RANK];            /* for hyperslab setting */
+    hsize_t start[RANK];               /* for hyperslab setting */
+    hsize_t count[RANK], stride[RANK]; /* for hyperslab setting */
+    hsize_t block[RANK];               /* for hyperslab setting */
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Independent write test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Independent write test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
 
     /* ----------------------------------------
@@ -1550,7 +1530,6 @@ dataset_writeInd_cuda(void)
     ret = H5Pclose(acc_tpl);
     VRFY((ret >= 0), "");
 
-
     /* ---------------------------------------------
      * Define the dimensions of the overall datasets
      * and the slabs local to the MPI process.
@@ -1558,20 +1537,16 @@ dataset_writeInd_cuda(void)
     /* setup dimensionality object */
     dims[0] = dim0;
     dims[1] = dim1;
-    sid = H5Screate_simple (RANK, dims, NULL);
+    sid     = H5Screate_simple(RANK, dims, NULL);
     VRFY((sid >= 0), "H5Screate_simple succeeded");
 
-
     /* create a dataset collectively */
-    dataset1 = H5Dcreate2(fid, DATASETNAME1, H5T_NATIVE_INT, sid,
-            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dataset1 = H5Dcreate2(fid, DATASETNAME1, H5T_NATIVE_INT, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     VRFY((dataset1 >= 0), "H5Dcreate2 succeeded");
 
     /* create another dataset collectively */
-    dataset2 = H5Dcreate2(fid, DATASETNAME2, H5T_NATIVE_INT, sid,
-            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dataset2 = H5Dcreate2(fid, DATASETNAME2, H5T_NATIVE_INT, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     VRFY((dataset2 >= 0), "H5Dcreate2 succeeded");
-
 
     /*
      * To test the independent orders of writes between processes, all
@@ -1586,47 +1561,44 @@ dataset_writeInd_cuda(void)
     dataset_fill(start, block, data_array1);
     MESG("data_array initialized");
 
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
-    cudaMemcpy(cuda_buff, data_array1, dim0*dim1*sizeof(DATATYPE), cudaMemcpyHostToDevice);
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
+    cudaMemcpy(cuda_buff, data_array1, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyHostToDevice);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* write data independently */
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset1 succeeded");
     /* write data independently */
-    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dwrite(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "H5Dwrite dataset2 succeeded");
 
     /* setup dimensions again to write with zero rows for process 0 */
-    if(VERBOSE_MED)
-    HDprintf("writeInd by some with zero row\n");
+    if (VERBOSE_MED)
+        HDprintf("writeInd by some with zero row\n");
     slab_set(mpi_rank, mpi_size, start, count, stride, block, ZROW);
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "H5Sset_hyperslab succeeded");
     /* need to make mem_dataspace to match for process 0 */
-    if(MAINPROCESS){
-    ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
-    VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
+    if (MAINPROCESS) {
+        ret = H5Sselect_hyperslab(mem_dataspace, H5S_SELECT_SET, start, stride, count, block);
+        VRFY((ret >= 0), "H5Sset_hyperslab mem_dataspace succeeded");
     }
     MESG("writeInd by some with zero row");
-if((mpi_rank/2)*2 != mpi_rank){
-    ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
-    VRFY((ret >= 0), "H5Dwrite dataset1 by ZROW succeeded");
-}
+    if ((mpi_rank / 2) * 2 != mpi_rank) {
+        ret = H5Dwrite(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
+        VRFY((ret >= 0), "H5Dwrite dataset1 by ZROW succeeded");
+    }
 #ifdef BARRIER_CHECKS
-MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif /* BARRIER_CHECKS */
 
     /* release dataspace ID */
@@ -1645,7 +1617,8 @@ MPI_Barrier(MPI_COMM_WORLD);
     H5Fclose(fid);
 
     /* release data buffers */
-    if(data_array1) HDfree(data_array1);
+    if (data_array1)
+        HDfree(data_array1);
     cudaFree(&cuda_buff);
 }
 
@@ -1653,22 +1626,22 @@ MPI_Barrier(MPI_COMM_WORLD);
 void
 dataset_readInd_cuda(void)
 {
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2;    /* Dataset ID */
-    DATATYPE *data_array1 = NULL;    /* data buffer */
-    DATATYPE *data_origin1 = NULL;     /* expected data buffer */
+    hid_t       fid;                 /* HDF5 file ID */
+    hid_t       acc_tpl;             /* File access templates */
+    hid_t       file_dataspace;      /* File dataspace ID */
+    hid_t       mem_dataspace;       /* memory dataspace ID */
+    hid_t       dataset1, dataset2;  /* Dataset ID */
+    DATATYPE *  data_array1  = NULL; /* data buffer */
+    DATATYPE *  data_origin1 = NULL; /* expected data buffer */
     const char *filename;
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    DATATYPE *  cuda_buff = NULL; /* data buffer */
 
-    hsize_t start[RANK];            /* for hyperslab setting */
-    hsize_t count[RANK], stride[RANK];        /* for hyperslab setting */
-    hsize_t block[RANK];            /* for hyperslab setting */
+    hsize_t start[RANK];               /* for hyperslab setting */
+    hsize_t count[RANK], stride[RANK]; /* for hyperslab setting */
+    hsize_t block[RANK];               /* for hyperslab setting */
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
@@ -1676,19 +1649,19 @@ dataset_readInd_cuda(void)
     // JOHN use this for verbose logging
     SetTestVerbosity(VERBO_LO);
     // SetTestVerbosity(VERBO_MED);
-    
+
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Independent read test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Independent read test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
-    data_origin1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_origin1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_origin1 != NULL), "data_origin1 HDmalloc succeeded");
 
     /* setup file access template */
@@ -1711,46 +1684,45 @@ dataset_readInd_cuda(void)
     dataset2 = H5Dopen2(fid, DATASETNAME1, H5P_DEFAULT);
     VRFY((dataset2 >= 0), "");
 
-
     /* set up dimensions of the slab this process accesses */
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYROW);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill dataset with test data */
     dataset_fill(start, block, data_origin1);
 
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
 
     /* read data independently */
-    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
 
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* read data independently */
-    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
 
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     /* close dataset collectively */
     ret = H5Dclose(dataset1);
@@ -1765,8 +1737,10 @@ dataset_readInd_cuda(void)
     H5Fclose(fid);
 
     /* release data buffers */
-    if(data_array1) HDfree(data_array1);
-    if(data_origin1) HDfree(data_origin1);
+    if (data_array1)
+        HDfree(data_array1);
+    if (data_origin1)
+        HDfree(data_origin1);
     cudaFree(&cuda_buff);
 }
 
@@ -1774,36 +1748,35 @@ void
 extend_writeInd2_cuda(void)
 {
     const char *filename;
-    hid_t fid;                  /* HDF5 file ID */
-    hid_t fapl;            /* File access templates */
-    hid_t fs;           /* File dataspace ID */
-    hid_t ms;           /* Memory dataspace ID */
-    hid_t dataset;        /* Dataset ID */
-    hsize_t orig_size=10;       /* Original dataset dim size */
-    hsize_t new_size=20;       /* Extended dataset dim size */
-    hsize_t one=1;
-    hsize_t max_size = H5S_UNLIMITED;    /* dataset maximum dim size */
-    hsize_t chunk_size = 16384;    /* chunk size */
-    hid_t dcpl;                   /* dataset create prop. list */
-    int   written[10],          /* Data to write */
-        retrieved[10];          /* Data read in */
-    int mpi_size, mpi_rank;     /* MPI settings */
-    int i;                      /* Local index variable */
-    herr_t ret;             /* Generic return value */
-    int *cuda_written=NULL;    /* data buffer */
-    int *cuda_retrieved=NULL;    /* data buffer */
+    hid_t       fid;             /* HDF5 file ID */
+    hid_t       fapl;            /* File access templates */
+    hid_t       fs;              /* File dataspace ID */
+    hid_t       ms;              /* Memory dataspace ID */
+    hid_t       dataset;         /* Dataset ID */
+    hsize_t     orig_size  = 10; /* Original dataset dim size */
+    hsize_t     new_size   = 20; /* Extended dataset dim size */
+    hsize_t     one        = 1;
+    hsize_t     max_size   = H5S_UNLIMITED; /* dataset maximum dim size */
+    hsize_t     chunk_size = 16384;         /* chunk size */
+    hid_t       dcpl;                       /* dataset create prop. list */
+    int         written[10],                /* Data to write */
+        retrieved[10];                      /* Data read in */
+    int    mpi_size, mpi_rank;              /* MPI settings */
+    int    i;                               /* Local index variable */
+    herr_t ret;                             /* Generic return value */
+    int *  cuda_written   = NULL;           /* data buffer */
+    int *  cuda_retrieved = NULL;           /* data buffer */
 
-
-   cudaMalloc( (void **)&cuda_written, 10*sizeof(int));
-   cudaMalloc( (void **)&cuda_retrieved, 10*sizeof(int));
+    cudaMalloc((void **)&cuda_written, 10 * sizeof(int));
+    cudaMalloc((void **)&cuda_retrieved, 10 * sizeof(int));
 
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Extend independent write test #2 on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Extend independent write test #2 on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* -------------------
      * START AN HDF5 FILE
@@ -1820,7 +1793,6 @@ extend_writeInd2_cuda(void)
     ret = H5Pclose(fapl);
     VRFY((ret >= 0), "H5Pclose succeeded");
 
-
     /* --------------------------------------------------------------
      * Define the dimensions of the overall datasets and create them.
      * ------------------------------------------------------------- */
@@ -1832,7 +1804,7 @@ extend_writeInd2_cuda(void)
     VRFY((ret >= 0), "H5Pset_chunk succeeded");
 
     /* setup dimensionality object */
-    fs = H5Screate_simple (1, &orig_size, &max_size);
+    fs = H5Screate_simple(1, &orig_size, &max_size);
     VRFY((fs >= 0), "H5Screate_simple succeeded");
 
     /* create an extendible dataset collectively */
@@ -1843,7 +1815,6 @@ extend_writeInd2_cuda(void)
     ret = H5Pclose(dcpl);
     VRFY((ret >= 0), "H5Pclose succeeded");
 
-
     /* -------------------------
      * Test writing to dataset
      * -------------------------*/
@@ -1852,17 +1823,17 @@ extend_writeInd2_cuda(void)
     VRFY((ms >= 0), "H5Screate_simple succeeded");
 
     /* put some trivial data in the data_array */
-    for(i = 0; i < (int)orig_size; i++)
+    for (i = 0; i < (int)orig_size; i++)
         written[i] = i;
     MESG("data array initialized");
-    if(VERBOSE_MED) {
-    MESG("writing at offset zero: ");
-        for(i = 0; i < (int)orig_size; i++)
-            HDprintf("%s%d", i?", ":"", written[i]);
+    if (VERBOSE_MED) {
+        MESG("writing at offset zero: ");
+        for (i = 0; i < (int)orig_size; i++)
+            HDprintf("%s%d", i ? ", " : "", written[i]);
         HDprintf("\n");
     }
 
-    cudaMemcpy(cuda_written, written, 10*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_written, written, 10 * sizeof(int), cudaMemcpyHostToDevice);
 
     ret = H5Dwrite(dataset, H5T_NATIVE_INT, ms, fs, H5P_DEFAULT, cuda_written);
     VRFY((ret >= 0), "H5Dwrite succeeded");
@@ -1872,18 +1843,18 @@ extend_writeInd2_cuda(void)
      * -------------------------*/
     ret = H5Dread(dataset, H5T_NATIVE_INT, ms, fs, H5P_DEFAULT, cuda_retrieved);
     VRFY((ret >= 0), "H5Dread succeeded");
-    cudaMemcpy(retrieved, cuda_retrieved, 10*sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(retrieved, cuda_retrieved, 10 * sizeof(int), cudaMemcpyDeviceToHost);
 
-    for (i=0; i<(int)orig_size; i++)
-        if(written[i]!=retrieved[i]) {
-            HDprintf("Line #%d: written!=retrieved: written[%d]=%d, retrieved[%d]=%d\n",__LINE__,
-                i,written[i], i,retrieved[i]);
+    for (i = 0; i < (int)orig_size; i++)
+        if (written[i] != retrieved[i]) {
+            HDprintf("Line #%d: written!=retrieved: written[%d]=%d, retrieved[%d]=%d\n", __LINE__, i,
+                     written[i], i, retrieved[i]);
             nerrors++;
         }
-    if(VERBOSE_MED){
-    MESG("read at offset zero: ");
-        for (i=0; i<(int)orig_size; i++)
-            HDprintf("%s%d", i?", ":"", retrieved[i]);
+    if (VERBOSE_MED) {
+        MESG("read at offset zero: ");
+        for (i = 0; i < (int)orig_size; i++)
+            HDprintf("%s%d", i ? ", " : "", retrieved[i]);
         HDprintf("\n");
     }
 
@@ -1900,18 +1871,18 @@ extend_writeInd2_cuda(void)
     /* -------------------------
      * Write to the second half of the dataset
      * -------------------------*/
-    for (i=0; i<(int)orig_size; i++)
+    for (i = 0; i < (int)orig_size; i++)
         written[i] = orig_size + i;
     MESG("data array re-initialized");
-    if(VERBOSE_MED) {
-    MESG("writing at offset 10: ");
-        for (i=0; i<(int)orig_size; i++)
-            HDprintf("%s%d", i?", ":"", written[i]);
+    if (VERBOSE_MED) {
+        MESG("writing at offset 10: ");
+        for (i = 0; i < (int)orig_size; i++)
+            HDprintf("%s%d", i ? ", " : "", written[i]);
         HDprintf("\n");
     }
     ret = H5Sselect_hyperslab(fs, H5S_SELECT_SET, &orig_size, NULL, &one, &orig_size);
     VRFY((ret >= 0), "H5Sselect_hyperslab succeeded");
-    cudaMemcpy(cuda_written, written, 10*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_written, written, 10 * sizeof(int), cudaMemcpyHostToDevice);
     ret = H5Dwrite(dataset, H5T_NATIVE_INT, ms, fs, H5P_DEFAULT, cuda_written);
     VRFY((ret >= 0), "H5Dwrite succeeded");
 
@@ -1920,21 +1891,20 @@ extend_writeInd2_cuda(void)
      * -------------------------*/
     ret = H5Dread(dataset, H5T_NATIVE_INT, ms, fs, H5P_DEFAULT, cuda_retrieved);
     VRFY((ret >= 0), "H5Dread succeeded");
-    cudaMemcpy(retrieved, cuda_retrieved, 10*sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(retrieved, cuda_retrieved, 10 * sizeof(int), cudaMemcpyDeviceToHost);
 
-    for (i=0; i<(int)orig_size; i++)
-        if(written[i]!=retrieved[i]) {
-            HDprintf("Line #%d: written!=retrieved: written[%d]=%d, retrieved[%d]=%d\n",__LINE__,
-                i,written[i], i,retrieved[i]);
+    for (i = 0; i < (int)orig_size; i++)
+        if (written[i] != retrieved[i]) {
+            HDprintf("Line #%d: written!=retrieved: written[%d]=%d, retrieved[%d]=%d\n", __LINE__, i,
+                     written[i], i, retrieved[i]);
             nerrors++;
         }
-    if(VERBOSE_MED){
-    MESG("read at offset 10: ");
-        for (i=0; i<(int)orig_size; i++)
-            HDprintf("%s%d", i?", ":"", retrieved[i]);
+    if (VERBOSE_MED) {
+        MESG("read at offset 10: ");
+        for (i = 0; i < (int)orig_size; i++)
+            HDprintf("%s%d", i ? ", " : "", retrieved[i]);
         HDprintf("\n");
     }
-
 
     /* Close dataset collectively */
     ret = H5Dclose(dataset);
@@ -1947,7 +1917,6 @@ extend_writeInd2_cuda(void)
     cudaFree(&cuda_written);
     cudaFree(&cuda_retrieved);
 }
-
 
 void
 dataset_writeInd(void)
@@ -3135,42 +3104,42 @@ dataset_readAll(void)
 void
 extend_readInd_cuda(void)
 {
-    hid_t fid;            /* HDF5 file ID */
-    hid_t acc_tpl;        /* File access templates */
-    hid_t file_dataspace;    /* File dataspace ID */
-    hid_t mem_dataspace;    /* memory dataspace ID */
-    hid_t dataset1, dataset2;    /* Dataset ID */
-    hsize_t dims[RANK];       /* dataset dim sizes */
-    DATATYPE *data_array1 = NULL;    /* data buffer */
-    DATATYPE *data_array2 = NULL;    /* data buffer */
-    DATATYPE *data_origin1 = NULL;     /* expected data buffer */
+    hid_t       fid;                 /* HDF5 file ID */
+    hid_t       acc_tpl;             /* File access templates */
+    hid_t       file_dataspace;      /* File dataspace ID */
+    hid_t       mem_dataspace;       /* memory dataspace ID */
+    hid_t       dataset1, dataset2;  /* Dataset ID */
+    hsize_t     dims[RANK];          /* dataset dim sizes */
+    DATATYPE *  data_array1  = NULL; /* data buffer */
+    DATATYPE *  data_array2  = NULL; /* data buffer */
+    DATATYPE *  data_origin1 = NULL; /* expected data buffer */
     const char *filename;
-    DATATYPE *cuda_buff = NULL;    /* data buffer */
+    DATATYPE *  cuda_buff = NULL; /* data buffer */
 
-    hsize_t start[RANK];            /* for hyperslab setting */
-    hsize_t count[RANK], stride[RANK];        /* for hyperslab setting */
-    hsize_t block[RANK];            /* for hyperslab setting */
+    hsize_t start[RANK];               /* for hyperslab setting */
+    hsize_t count[RANK], stride[RANK]; /* for hyperslab setting */
+    hsize_t block[RANK];               /* for hyperslab setting */
 
-    herr_t ret;             /* Generic return value */
-    int mpi_size, mpi_rank;
+    herr_t ret; /* Generic return value */
+    int    mpi_size, mpi_rank;
 
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
     filename = GetTestParameters();
-    if(VERBOSE_MED)
-    HDprintf("Extend independent read test on file %s\n", filename);
+    if (VERBOSE_MED)
+        HDprintf("Extend independent read test on file %s\n", filename);
 
     /* set up MPI parameters */
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     /* allocate memory for data buffer */
-    data_array1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array1 != NULL), "data_array1 HDmalloc succeeded");
-    data_array2 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_array2 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_array2 != NULL), "data_array2 HDmalloc succeeded");
-    data_origin1 = (DATATYPE *)HDmalloc(dim0*dim1*sizeof(DATATYPE));
+    data_origin1 = (DATATYPE *)HDmalloc(dim0 * dim1 * sizeof(DATATYPE));
     VRFY((data_origin1 != NULL), "data_origin1 HDmalloc succeeded");
 
     /* -------------------
@@ -3181,7 +3150,7 @@ extend_readInd_cuda(void)
     VRFY((acc_tpl >= 0), "");
 
     /* open the file collectively */
-    fid=H5Fopen(filename,H5F_ACC_RDONLY,acc_tpl);
+    fid = H5Fopen(filename, H5F_ACC_RDONLY, acc_tpl);
     VRFY((fid >= 0), "");
 
     /* Release file-access template */
@@ -3201,7 +3170,7 @@ extend_readInd_cuda(void)
     H5Eget_auto2(H5E_DEFAULT, &old_func, &old_client_data);
     H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "H5Dget_space succeeded");
     ret = H5Sget_simple_extent_dims(file_dataspace, dims, NULL);
     VRFY((ret > 0), "H5Sget_simple_extent_dims succeeded");
@@ -3213,80 +3182,78 @@ extend_readInd_cuda(void)
     H5Eset_auto2(H5E_DEFAULT, old_func, old_client_data);
     H5Sclose(file_dataspace);
 
-
     /* Read dataset1 using BYROW pattern */
     /* set up dimensions of the slab this process accesses */
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYROW);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset1);
+    file_dataspace = H5Dget_space(dataset1);
     VRFY((file_dataspace >= 0), "");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill dataset with test data */
     dataset_fill(start, block, data_origin1);
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
-    cudaMalloc( (void **)&cuda_buff, dim0*dim1*sizeof(DATATYPE));
- 
+    cudaMalloc((void **)&cuda_buff, dim0 * dim1 * sizeof(DATATYPE));
+
     // Raafat: extend_readInd_cuda prob1
     /* read data independently */
-    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dread(dataset1, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
 
     VRFY((ret >= 0), "H5Dread succeeded");
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
 
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
     VRFY((ret == 0), "dataset1 read verified correct");
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     H5Sclose(mem_dataspace);
     H5Sclose(file_dataspace);
-
 
     /* Read dataset2 using BYCOL pattern */
     /* set up dimensions of the slab this process accesses */
     slab_set(mpi_rank, mpi_size, start, count, stride, block, BYCOL);
 
     /* create a file dataspace independently */
-    file_dataspace = H5Dget_space (dataset2);
+    file_dataspace = H5Dget_space(dataset2);
     VRFY((file_dataspace >= 0), "");
     ret = H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, start, stride, count, block);
     VRFY((ret >= 0), "");
 
     /* create a memory dataspace independently */
-    mem_dataspace = H5Screate_simple (RANK, block, NULL);
+    mem_dataspace = H5Screate_simple(RANK, block, NULL);
     VRFY((mem_dataspace >= 0), "");
 
     /* fill dataset with test data */
     dataset_fill(start, block, data_origin1);
-    if(VERBOSE_MED){
-    MESG("data_array created");
-    dataset_print(start, block, data_array1);
+    if (VERBOSE_MED) {
+        MESG("data_array created");
+        dataset_print(start, block, data_array1);
     }
 
     // Raafat: extend_readInd_cuda prob 2
     /* read data independently */
-    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace,
-        H5P_DEFAULT, cuda_buff);
+    ret = H5Dread(dataset2, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, cuda_buff);
     VRFY((ret >= 0), "H5Dread succeeded");
 
-    cudaMemcpy(data_array1, cuda_buff, dim0*dim1*sizeof(DATATYPE), cudaMemcpyDeviceToHost);
+    cudaMemcpy(data_array1, cuda_buff, dim0 * dim1 * sizeof(DATATYPE), cudaMemcpyDeviceToHost);
 
     /* verify the read data with original expected data */
     ret = dataset_vrfy(start, count, stride, block, data_array1, data_origin1);
     VRFY((ret == 0), "dataset2 read verified correct");
-    if(ret) nerrors++;
+    if (ret)
+        nerrors++;
 
     H5Sclose(mem_dataspace);
     H5Sclose(file_dataspace);
@@ -3297,14 +3264,16 @@ extend_readInd_cuda(void)
     ret = H5Dclose(dataset2);
     VRFY((ret >= 0), "");
 
-
     /* close the file collectively */
     H5Fclose(fid);
 
     /* release data buffers */
-    if(data_array1) HDfree(data_array1);
-    if(data_array2) HDfree(data_array2);
-    if(data_origin1) HDfree(data_origin1);
+    if (data_array1)
+        HDfree(data_array1);
+    if (data_array2)
+        HDfree(data_array2);
+    if (data_origin1)
+        HDfree(data_origin1);
     cudaFree(&cuda_buff);
 }
 
