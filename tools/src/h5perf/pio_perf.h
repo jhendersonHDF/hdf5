@@ -47,24 +47,24 @@ typedef enum iotype_ {
 } iotype;
 
 typedef struct parameters_ {
-    iotype                io_type;       /* The type of IO test to perform       */
-    int                   num_procs;     /* Maximum number of processes to use   */
-    long                  num_files;     /* Number of files to create            */
-    long                  num_dsets;     /* Number of datasets to create         */
-    off_t                 num_bytes;     /* Number of bytes in each dset         */
-    int                   num_iters;     /* Number of times to loop doing the IO */
-    size_t                buf_size;      /* Buffer size                          */
-    size_t                blk_size;      /* Block size                           */
-    unsigned              interleaved;   /* Interleaved vs. contiguous blocks    */
-    unsigned              collective;    /* Collective vs. independent I/O       */
-    unsigned              dim2d;         /* 1D vs. 2D                            */
-    hsize_t               h5_align;      /* HDF5 object alignment                */
-    hsize_t               h5_thresh;     /* HDF5 object alignment threshold      */
-    int                   h5_use_chunks; /* Make HDF5 dataset chunked            */
-    int                   h5_write_only; /* Perform the write tests only         */
-    h5tools_filter_info_t h5_filters[H5_PERF_MAX_NFILTERS];     /* Array of filters to apply to HDF5 dataset */
-    int                   h5_num_filters; /* Number of entries in HDF5 filters array   */
-    int                   verify;        /* Verify data correctness              */
+    iotype                io_type;                          /* The type of IO test to perform       */
+    int                   num_procs;                        /* Maximum number of processes to use   */
+    long                  num_files;                        /* Number of files to create            */
+    long                  num_dsets;                        /* Number of datasets to create         */
+    off_t                 num_bytes;                        /* Number of bytes in each dset         */
+    int                   num_iters;                        /* Number of times to loop doing the IO */
+    size_t                buf_size;                         /* Buffer size                          */
+    size_t                blk_size;                         /* Block size                           */
+    unsigned              interleaved;                      /* Interleaved vs. contiguous blocks    */
+    unsigned              collective;                       /* Collective vs. independent I/O       */
+    unsigned              dim2d;                            /* 1D vs. 2D                            */
+    hsize_t               h5_align;                         /* HDF5 object alignment                */
+    hsize_t               h5_thresh;                        /* HDF5 object alignment threshold      */
+    int                   h5_use_chunks;                    /* Make HDF5 dataset chunked            */
+    int                   h5_write_only;                    /* Perform the write tests only         */
+    h5tools_filter_info_t h5_filters[H5_PERF_MAX_NFILTERS]; /* Array of filters to apply to HDF5 dataset */
+    int                   h5_num_filters;                   /* Number of entries in HDF5 filters array   */
+    int                   verify;                           /* Verify data correctness              */
 } parameters;
 
 typedef struct results_ {
