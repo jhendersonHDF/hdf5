@@ -548,6 +548,36 @@ typedef struct h5tools_context_t {
     int              display_char;  /* */
 } h5tools_context_t;
 
+/* Maximum number of client data values for a filter */
+#define MAX_CD_VALUES 20
+
+/*
+ * Info structure for a filter. Contains the filter ID,
+ * the filter flags (see below) and the auxiliary data
+ * for the filter.
+ *
+ * The `filter_flag` field is a bit vector of the following
+ * fields:
+ *
+ * H5Z_FLAG_OPTIONAL(0x0001)
+ *   If this bit is set then the filter is optional.  If the
+ *   filter fails during an H5Dwrite() operation then the filter
+ *   is just excluded from the pipeline for the chunk for which it
+ *   failed; the filter will not participate in the pipeline
+ *   during an H5Dread() of the chunk.  If this bit is clear and
+ *   the filter fails then the entire I/O operation fails.
+ *   If this bit is set but encoding is disabled for a filter,
+ *   attempting to write will generate an error.
+ *
+ * Filter info structure
+ */
+typedef struct h5tools_filter_info_t {
+    H5Z_filter_t filter_id;                /* filter identification number */
+    unsigned     filter_flag;              /* filter definition flag */
+    unsigned     cd_values[MAX_CD_VALUES]; /* filter client data values */
+    size_t       cd_nelmts;                /* filter client number of values */
+} h5tools_filter_info_t;
+
 /* VOL and VFD info structs used to set the file access property
  * lists in the tools.
  */
@@ -667,22 +697,27 @@ H5TOOLS_DLL int  h5tools_set_input_file(const char *fname, int is_bin);
 H5TOOLS_DLL int  h5tools_set_output_file(const char *fname, int is_bin);
 H5TOOLS_DLL int  h5tools_set_error_file(const char *fname, int is_bin);
 
-H5TOOLS_DLL hid_t   h5tools_get_fapl(hid_t prev_fapl_id, h5tools_vol_info_t *vol_info,
-                                     h5tools_vfd_info_t *vfd_info);
-H5TOOLS_DLL herr_t  h5tools_get_vfd_name(hid_t fapl_id, char *drivername, size_t drivername_size);
-H5TOOLS_DLL hid_t   h5tools_fopen(const char *fname, unsigned flags, hid_t fapl, hbool_t use_specific_driver,
-                                  char *drivername, size_t drivername_size);
-H5TOOLS_DLL hid_t   h5tools_get_little_endian_type(hid_t type);
-H5TOOLS_DLL hid_t   h5tools_get_big_endian_type(hid_t type);
-H5TOOLS_DLL htri_t  h5tools_detect_vlen(hid_t tid);
-H5TOOLS_DLL htri_t  h5tools_detect_vlen_str(hid_t tid);
-H5TOOLS_DLL hbool_t h5tools_is_obj_same(hid_t loc_id1, const char *name1, hid_t loc_id2, const char *name2);
-H5TOOLS_DLL void    init_acc_pos(unsigned ndims, const hsize_t *dims, hsize_t *acc, hsize_t *pos,
-                                 hsize_t *p_min_idx);
-H5TOOLS_DLL hsize_t calc_acc_pos(unsigned ndims, hsize_t elemtno, const hsize_t *acc, hsize_t *pos);
-H5TOOLS_DLL hbool_t h5tools_is_zero(const void *_mem, size_t size);
-H5TOOLS_DLL int     h5tools_canreadf(const char *name, hid_t dcpl_id);
-H5TOOLS_DLL int     h5tools_can_encode(H5Z_filter_t filtn);
+H5TOOLS_DLL hid_t        h5tools_get_fapl(hid_t prev_fapl_id, h5tools_vol_info_t *vol_info,
+                                          h5tools_vfd_info_t *vfd_info);
+H5TOOLS_DLL herr_t       h5tools_get_vfd_name(hid_t fapl_id, char *drivername, size_t drivername_size);
+H5TOOLS_DLL hid_t        h5tools_fopen(const char *fname, unsigned flags, hid_t fapl, hbool_t use_specific_driver,
+                                       char *drivername, size_t drivername_size);
+H5TOOLS_DLL hid_t        h5tools_get_little_endian_type(hid_t type);
+H5TOOLS_DLL hid_t        h5tools_get_big_endian_type(hid_t type);
+H5TOOLS_DLL htri_t       h5tools_detect_vlen(hid_t tid);
+H5TOOLS_DLL htri_t       h5tools_detect_vlen_str(hid_t tid);
+H5TOOLS_DLL hbool_t      h5tools_is_obj_same(hid_t loc_id1, const char *name1, hid_t loc_id2, const char *name2);
+H5TOOLS_DLL void         init_acc_pos(unsigned ndims, const hsize_t *dims, hsize_t *acc, hsize_t *pos,
+                                      hsize_t *p_min_idx);
+H5TOOLS_DLL hsize_t      calc_acc_pos(unsigned ndims, hsize_t elemtno, const hsize_t *acc, hsize_t *pos);
+H5TOOLS_DLL hbool_t      h5tools_is_zero(const void *_mem, size_t size);
+H5TOOLS_DLL int          h5tools_canreadf(const char *name, hid_t dcpl_id);
+H5TOOLS_DLL int          h5tools_can_encode(H5Z_filter_t filtn);
+H5TOOLS_DLL H5Z_filter_t h5tools_filter_name_to_id(const char *filter_name);
+H5TOOLS_DLL const char * h5tools_filter_id_to_name(H5Z_filter_t filter_id);
+H5TOOLS_DLL herr_t       h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info);
+H5TOOLS_DLL herr_t       h5tools_apply_filters(hid_t dcpl_id, h5tools_filter_info_t *filter_info_list, size_t num_filters);
+H5TOOLS_DLL void         h5tools_dump_filter_list(FILE *stream, h5tools_filter_info_t *filter_info_list, size_t num_filters);
 
 H5TOOLS_DLL void h5tools_simple_prefix(FILE *stream, const h5tool_format_t *info, h5tools_context_t *ctx,
                                        hsize_t elmtno, int secnum);
