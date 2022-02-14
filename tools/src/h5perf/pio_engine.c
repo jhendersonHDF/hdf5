@@ -898,6 +898,14 @@ do_write(results *res, file_descr *fd, parameters *parms, long ndsets, off_t nby
                     }     /* end if */
                 }         /* end else */
 
+                /* Apply any HDF5 dataset filters */
+                if (parms->h5_num_filters > 0) {
+                    if (h5tools_apply_filters(h5dcpl, parms->h5_filters, (size_t)parms->h5_num_filters) < 0) {
+                        HDfprintf(stderr, "HDF5 Filter Apply failed\n");
+                        GOTOERROR(FAIL);
+                    }
+                }
+
                 HDsnprintf(dname, sizeof(dname), "Dataset_%ld", ndset);
                 h5ds_id = H5DCREATE(fd->h5fd, dname, ELMT_H5_TYPE, h5dset_space_id, h5dcpl);
 

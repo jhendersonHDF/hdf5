@@ -139,6 +139,7 @@ static struct h5_long_options l_opts[] = {{"align", require_arg, 'a'},
                                           {"chunk", no_arg, 'c'},
                                           {"collective", no_arg, 'C'},
                                           {"debug", require_arg, 'D'},
+                                          {"filter", require_arg, 'f'},
                                           {"geometry", no_arg, 'g'},
                                           {"help", no_arg, 'h'},
                                           {"interleaved", require_arg, 'I'},
@@ -156,27 +157,29 @@ static struct h5_long_options l_opts[] = {{"align", require_arg, 'a'},
                                           {NULL, 0, '\0'}};
 
 struct options {
-    long        io_types;      /* bitmask of which I/O types to test   */
-    const char *output_file;   /* file to print report to              */
-    long        num_dsets;     /* number of datasets                   */
-    long        num_files;     /* number of files                      */
-    off_t       num_bpp;       /* number of bytes per proc per dset    */
-    int         num_iters;     /* number of iterations                 */
-    int         max_num_procs; /* maximum number of processes to use   */
-    int         min_num_procs; /* minimum number of processes to use   */
-    size_t      max_xfer_size; /* maximum transfer buffer size         */
-    size_t      min_xfer_size; /* minimum transfer buffer size         */
-    size_t      blk_size;      /* Block size                           */
-    unsigned    interleaved;   /* Interleaved vs. contiguous blocks    */
-    unsigned    collective;    /* Collective vs. independent I/O       */
-    unsigned    dim2d;         /* 1D vs. 2D geometry                   */
-    int         print_times;   /* print times as well as throughputs   */
-    int         print_raw;     /* print raw data throughput info       */
-    off_t       h5_alignment;  /* alignment in HDF5 file               */
-    off_t       h5_threshold;  /* threshold for alignment in HDF5 file */
-    int         h5_use_chunks; /* Make HDF5 dataset chunked            */
-    int         h5_write_only; /* Perform the write tests only         */
-    int         verify;        /* Verify data correctness              */
+    long                  io_types;       /* bitmask of which I/O types to test        */
+    const char *          output_file;    /* file to print report to                   */
+    long                  num_dsets;      /* number of datasets                        */
+    long                  num_files;      /* number of files                           */
+    off_t                 num_bpp;        /* number of bytes per proc per dset         */
+    int                   num_iters;      /* number of iterations                      */
+    int                   max_num_procs;  /* maximum number of processes to use        */
+    int                   min_num_procs;  /* minimum number of processes to use        */
+    size_t                max_xfer_size;  /* maximum transfer buffer size              */
+    size_t                min_xfer_size;  /* minimum transfer buffer size              */
+    size_t                blk_size;       /* Block size                                */
+    unsigned              interleaved;    /* Interleaved vs. contiguous blocks         */
+    unsigned              collective;     /* Collective vs. independent I/O            */
+    unsigned              dim2d;          /* 1D vs. 2D geometry                        */
+    int                   print_times;    /* print times as well as throughputs        */
+    int                   print_raw;      /* print raw data throughput info            */
+    off_t                 h5_alignment;   /* alignment in HDF5 file                    */
+    off_t                 h5_threshold;   /* threshold for alignment in HDF5 file      */
+    int                   h5_use_chunks;  /* Make HDF5 dataset chunked                 */
+    int                   h5_write_only;  /* Perform the write tests only              */
+    h5tools_filter_info_t h5_filters[H5_PERF_MAX_NFILTERS];     /* Array of filters to apply to HDF5 dataset */
+    int                   h5_num_filters; /* Number of entries in HDF5 filters array   */
+    int                   verify;         /* Verify data correctness                   */
 };
 
 typedef struct _minmax {
@@ -320,18 +323,20 @@ run_test_loop(struct options *opts)
     int        num_procs;
     int        doing_pio; /* if this process is doing PIO */
 
-    parms.num_files     = opts->num_files;
-    parms.num_dsets     = opts->num_dsets;
-    parms.num_iters     = opts->num_iters;
-    parms.blk_size      = opts->blk_size;
-    parms.interleaved   = opts->interleaved;
-    parms.collective    = opts->collective;
-    parms.dim2d         = opts->dim2d;
-    parms.h5_align      = (hsize_t)opts->h5_alignment;
-    parms.h5_thresh     = (hsize_t)opts->h5_threshold;
-    parms.h5_use_chunks = opts->h5_use_chunks;
-    parms.h5_write_only = opts->h5_write_only;
-    parms.verify        = opts->verify;
+    parms.num_files      = opts->num_files;
+    parms.num_dsets      = opts->num_dsets;
+    parms.num_iters      = opts->num_iters;
+    parms.blk_size       = opts->blk_size;
+    parms.interleaved    = opts->interleaved;
+    parms.collective     = opts->collective;
+    parms.dim2d          = opts->dim2d;
+    parms.h5_align       = (hsize_t)opts->h5_alignment;
+    parms.h5_thresh      = (hsize_t)opts->h5_threshold;
+    parms.h5_use_chunks  = opts->h5_use_chunks;
+    parms.h5_write_only  = opts->h5_write_only;
+    parms.h5_num_filters = opts->h5_num_filters;
+    parms.verify         = opts->verify;
+    HDmemcpy(parms.h5_filters, opts->h5_filters, sizeof(parms.h5_filters));
 
     /* start with max_num_procs and decrement it by half for each loop. */
     /* if performance needs restart, fewer processes may be needed. */
@@ -1253,6 +1258,14 @@ report_parameters(struct options *opts)
     else
         HDfprintf(output, "Contiguous\n");
 
+    if (opts->h5_num_filters > 0) {
+        HDfprintf(output, "rank %d: HDF5 filters for datasets:\n", rank);
+
+        HDfprintf(output, " [ ");
+        h5tools_dump_filter_list(output, opts->h5_filters, opts->h5_num_filters);
+        HDfprintf(output, " ]\n");
+    }
+
     {
         char *prefix = HDgetenv("HDF5_PARAPREFIX");
 
@@ -1283,27 +1296,30 @@ parse_command_line(int argc, const char *const *argv)
 
     cl_opts = (struct options *)malloc(sizeof(struct options));
 
-    cl_opts->output_file   = NULL;
-    cl_opts->io_types      = 0; /* will set default after parsing options */
-    cl_opts->num_dsets     = 1;
-    cl_opts->num_files     = 1;
-    cl_opts->num_bpp       = 0;
-    cl_opts->num_iters     = 1;
-    cl_opts->max_num_procs = comm_world_nprocs_g;
-    cl_opts->min_num_procs = 1;
-    cl_opts->max_xfer_size = 0;
-    cl_opts->min_xfer_size = 0;
-    cl_opts->blk_size      = 0;
-    cl_opts->interleaved   = 0;     /* Default to contiguous blocks in dataset */
-    cl_opts->collective    = 0;     /* Default to independent I/O access */
-    cl_opts->dim2d         = 0;     /* Default to 1D */
-    cl_opts->print_times   = FALSE; /* Printing times is off by default */
-    cl_opts->print_raw     = FALSE; /* Printing raw data throughput is off by default */
-    cl_opts->h5_alignment  = 1;     /* No alignment for HDF5 objects by default */
-    cl_opts->h5_threshold  = 1;     /* No threshold for aligning HDF5 objects by default */
-    cl_opts->h5_use_chunks = FALSE; /* Don't chunk the HDF5 dataset by default */
-    cl_opts->h5_write_only = FALSE; /* Do both read and write by default */
-    cl_opts->verify        = FALSE; /* No Verify data correctness by default */
+    cl_opts->output_file    = NULL;
+    cl_opts->io_types       = 0; /* will set default after parsing options */
+    cl_opts->num_dsets      = 1;
+    cl_opts->num_files      = 1;
+    cl_opts->num_bpp        = 0;
+    cl_opts->num_iters      = 1;
+    cl_opts->max_num_procs  = comm_world_nprocs_g;
+    cl_opts->min_num_procs  = 1;
+    cl_opts->max_xfer_size  = 0;
+    cl_opts->min_xfer_size  = 0;
+    cl_opts->blk_size       = 0;
+    cl_opts->interleaved    = 0;     /* Default to contiguous blocks in dataset */
+    cl_opts->collective     = 0;     /* Default to independent I/O access */
+    cl_opts->dim2d          = 0;     /* Default to 1D */
+    cl_opts->print_times    = FALSE; /* Printing times is off by default */
+    cl_opts->print_raw      = FALSE; /* Printing raw data throughput is off by default */
+    cl_opts->h5_alignment   = 1;     /* No alignment for HDF5 objects by default */
+    cl_opts->h5_threshold   = 1;     /* No threshold for aligning HDF5 objects by default */
+    cl_opts->h5_use_chunks  = FALSE; /* Don't chunk the HDF5 dataset by default */
+    cl_opts->h5_write_only  = FALSE; /* Do both read and write by default */
+    cl_opts->h5_num_filters = 0;
+    cl_opts->verify         = FALSE; /* No Verify data correctness by default */
+
+    HDmemset(cl_opts->h5_filters, 0, sizeof(cl_opts->h5_filters));
 
     while ((opt = H5_get_option(argc, argv, s_opts, l_opts)) != EOF) {
         switch ((char)opt) {
@@ -1423,6 +1439,36 @@ parse_command_line(int argc, const char *const *argv)
             case 'e':
                 cl_opts->num_bpp = parse_size_directive(H5_optarg);
                 break;
+            case 'f': {
+                h5tools_filter_info_t filter_info;
+
+                /* Turn on chunked HDF5 dataset creation */
+                if (!cl_opts->h5_use_chunks)
+                    cl_opts->h5_use_chunks = TRUE;
+
+                /* Force collective parallel I/O when filters are involved */
+                if (!cl_opts->collective)
+                    cl_opts->collective = 1;
+
+#if 0 /* XXX */
+                /* Use collective metadata reads for parallel I/O when filters are involved */
+                if (!cl_opts->h5_collective_md_read)
+                    cl_opts->h5_collective_md_read = 1;
+#endif
+                if (cl_opts->h5_num_filters == H5_PERF_MAX_NFILTERS) {
+                    HDfprintf(stderr, "pio_perf: maximum number of filters exceeded\n");
+                    HDexit(EXIT_FAILURE);
+                }
+
+                if (h5tools_parse_filter(H5_optarg, &filter_info) < 0) {
+                    HDfprintf(stderr, "pio_perf: invalid filter string <%s>\n", H5_optarg);
+                    HDexit(EXIT_FAILURE);
+                }
+
+                cl_opts->h5_filters[cl_opts->h5_num_filters++] = filter_info;
+
+                break;
+            }
             case 'F':
                 cl_opts->num_files = HDatoi(H5_optarg);
                 break;
@@ -1599,6 +1645,8 @@ usage(const char *prog)
         HDprintf("     -e S, --num-bytes=S         Number of bytes per process per dataset\n");
         HDprintf("                                 (see below for description)\n");
         HDprintf("                                 [default: 256K for 1D, 8K for 2D]\n");
+        HDprintf("     -f, --filter                Specify a filter to apply to HDF5 datasets\n");
+        HDprintf("                                 (see below for description and example)\n");
         HDprintf("     -F N, --num-files=N         Number of files [default: 1]\n");
         HDprintf("     -g, --geometry              Use 2D geometry [default: 1D geometry]\n");
         HDprintf("     -i N, --num-iterations=N    Number of iterations to perform [default: 1]\n");
@@ -1679,6 +1727,54 @@ usage(const char *prog)
         HDprintf("\n");
         HDprintf("      For information about access patterns in 2D geometry, please refer to the\n");
         HDprintf("      HDF5 Reference Manual.\n");
+        HDprintf("\n");
+        HDprintf("  Filters:\n");
+        HDprintf("      One can specify filters to apply to HDF5 datasets by supplying a string of\n");
+        HDprintf("      the format:\n");
+        HDprintf("\n");
+        HDprintf("      Filter Name:{Filter Parameters}\n");
+        HDprintf("\n");
+        HDprintf("      where 'Filter Name' is the name of the filter, e.g. GZIP, and\n");
+        HDprintf("      'Filter Parameters' is an optional comma-separated list of auxiliary data\n");
+        HDprintf("      for the filter. For example, \"--filter=GZIP:{7}\" would signify to use the\n");
+        HDprintf("      GZIP/Deflate filter with a compression level of 7. \"--filter=SZIP:{NN, 32}\"\n");
+        HDprintf("      would signify that the SZIP filter should be used with the H5_SZIP_NN_OPTION_MASK\n");
+        HDprintf("      flag for the filter's coding method and a Pixels-per-block setting of 32. If the\n");
+        HDprintf("      filter takes no extra parameters, only the filter name should be specified in the\n");
+        HDprintf("      filter string and everything else should be omitted; e.g., \"Shuffle\" is a valid\n");
+        HDprintf("      filter string, but \"Shuffle:\" and \"Shuffle:{}\" should be considered malformed.\n");
+        HDprintf("      User-defined filters should specify \"User-defined\" for the filter name. A\n");
+        HDprintf("      separate filter string should be provided for each filter to be applied to HDF5\n");
+        HDprintf("      datasets and filters are applied in the order they are provided. For example,\n");
+        HDprintf("      \"--filter=Shuffle --filter=GZIP:{7}\" will first apply the Shuffle filter\n");
+        HDprintf("      and then the GZIP/Deflate with a compression level of 7.\n");
+        HDprintf("\n");
+        HDprintf("      Note that auxiliary data for filters is passed as unsigned integer values.\n");
+        HDprintf("      Certain filters known to HDF5, such as SZIP, may accept special strings\n");
+        HDprintf("      such as 'NN', but parameters should otherwise be parseable as unsigned integer\n");
+        HDprintf("      values. Also note that the order these parameters are specified in is important.\n");
+        HDprintf("      The following is a list of known filters which accept filter parameters. The\n");
+        HDprintf("      parameters to these filters are listed in the order which they are accepted.\n");
+        HDprintf("\n");
+        HDprintf("       GZIP/Deflate - GZIP compression\n");
+        HDprintf("         - Compression Level - An integer value between\n");
+        HDprintf("                               1 (less compression) - 9 (more compression)\n");
+        HDprintf("\n");
+        HDprintf("       SZIP - SZIP compression\n");
+        HDprintf("         - Coding Method    - 'EC' or 'NN'\n");
+        HDprintf("         - Pixels-per-block - An even number between 2 - 32\n");
+        HDprintf("\n");
+        HDprintf("       SOFF/ScaleOffset - Scale/Offset filter\n");
+        HDprintf("         - Scale Type   - 'IN' or 'DS'\n");
+        HDprintf("         - Scale Factor - An integer value\n");
+        HDprintf("\n");
+        HDprintf("       UD/User-defined - User-defined filter\n");
+        HDprintf("         - Filter ID      - Required - ID of the user-defined filter\n");
+        HDprintf("         - Filter Flags   - Required - 0 to mark the filter as mandatory\n");
+        HDprintf("                                       1 to mark the filter as optional\n");
+        HDprintf("         - CD Value Count - Required - Number of client data values the filter\n");
+        HDprintf("                                       expects and accepts\n");
+        HDprintf("         - CD Values      - Optional - List of client data values for the filter\n");
         HDprintf("\n");
         HDprintf("  DL - is a list of debugging flags. Valid values are:\n");
         HDprintf("          1 - Minimal\n");
