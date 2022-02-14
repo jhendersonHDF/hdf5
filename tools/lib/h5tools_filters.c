@@ -316,7 +316,8 @@ h5tools_filter_id_to_name(H5Z_filter_t filter_id)
             return "H5Z_FILTER_RESERVED";
         default:
             if ((filter_id >= H5Z_FILTER_RESERVED) && (filter_id <= H5Z_FILTER_MAX)) {
-                HDsnprintf(ud_filter_buf, sizeof(ud_filter_buf), "User-defined (ID: %lld)", (long long)filter_id);
+                HDsnprintf(ud_filter_buf, sizeof(ud_filter_buf), "User-defined (ID: %lld)",
+                           (long long)filter_id);
                 return ud_filter_buf;
             }
             else
@@ -392,8 +393,8 @@ h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info)
 {
     const char * delims = ":{},";
     H5Z_filter_t filter_id;
-    unsigned     filter_flag = H5Z_FLAG_MANDATORY;
-    unsigned     cd_values[MAX_CD_VALUES] = { 0 };
+    unsigned     filter_flag              = H5Z_FLAG_MANDATORY;
+    unsigned     cd_values[MAX_CD_VALUES] = {0};
     hbool_t      user_defined             = FALSE;
     size_t       num_parsed_params        = 0;
     size_t       expected_cd_nvalues      = 0;
@@ -456,7 +457,8 @@ h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info)
         unsigned long token_value;
 
         if (num_parsed_params >= MAX_CD_VALUES)
-            H5TOOLS_GOTO_ERROR(FAIL, "number of filter client data values exceeded maximum (%d)", MAX_CD_VALUES);
+            H5TOOLS_GOTO_ERROR(FAIL, "number of filter client data values exceeded maximum (%d)",
+                               MAX_CD_VALUES);
 
         /*
          * Do any special processing or validation based on filter
@@ -493,7 +495,7 @@ h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info)
         /* Make sure the value will fit in an unsigned int */
         if (token_value > UINT_MAX)
             H5TOOLS_GOTO_ERROR(FAIL, "client data value <%lu> was larger than an unsigned int for token <%s>",
-                    token_value, token);
+                               token_value, token);
 
         /*
          * For known filters, set the value in the client data values array.
@@ -514,15 +516,18 @@ h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info)
             }
             else if (num_parsed_params == H5TOOLS_UD_FILTER_FLAG_PARM) {
                 if (token_value != H5Z_FLAG_MANDATORY && token_value != H5Z_FLAG_OPTIONAL)
-                    H5TOOLS_GOTO_ERROR(FAIL, "invalid user-defined filter flag in <%s>; must be MANDATORY (%u) or OPTIONAL (%u)",
-                            token, H5Z_FLAG_MANDATORY, H5Z_FLAG_OPTIONAL);
+                    H5TOOLS_GOTO_ERROR(
+                        FAIL,
+                        "invalid user-defined filter flag in <%s>; must be MANDATORY (%u) or OPTIONAL (%u)",
+                        token, H5Z_FLAG_MANDATORY, H5Z_FLAG_OPTIONAL);
 
                 filter_flag = (unsigned)token_value;
             }
             else if (num_parsed_params == H5TOOLS_UD_FILTER_CD_COUNT_PARM) {
                 if (token_value > MAX_CD_VALUES)
-                    H5TOOLS_GOTO_ERROR(FAIL, "number of user-defined filter client data values (%lu) exceeds maximum (%d)",
-                            token_value, MAX_CD_VALUES);
+                    H5TOOLS_GOTO_ERROR(
+                        FAIL, "number of user-defined filter client data values (%lu) exceeds maximum (%d)",
+                        token_value, MAX_CD_VALUES);
 
                 expected_cd_nvalues = (size_t)token_value;
             }
@@ -553,8 +558,9 @@ h5tools_parse_filter(const char *filter_str, h5tools_filter_info_t *filter_info)
 
     if (num_parsed_params != expected_cd_nvalues)
         H5TOOLS_GOTO_ERROR(FAIL,
-                "expected number of filter client data values (%zu) didn't match number of parsed values (%zu) in <%s>",
-                expected_cd_nvalues, num_parsed_params, filter_str);
+                           "expected number of filter client data values (%zu) didn't match number of parsed "
+                           "values (%zu) in <%s>",
+                           expected_cd_nvalues, num_parsed_params, filter_str);
 
     switch (filter_id) {
         case H5Z_FILTER_DEFLATE:
@@ -645,7 +651,7 @@ h5tools_apply_filters(hid_t dcpl_id, h5tools_filter_info_t *filter_info_list, si
             case H5Z_FILTER_SZIP:
                 HDassert(filter_info.cd_nelmts == H5Z_SZIP_USER_NPARMS);
                 if (H5Pset_szip(dcpl_id, filter_info.cd_values[H5Z_SZIP_PARM_MASK],
-                        filter_info.cd_values[H5Z_SZIP_PARM_PPB]) < 0)
+                                filter_info.cd_values[H5Z_SZIP_PARM_PPB]) < 0)
                     H5TOOLS_GOTO_ERROR(FAIL, "H5Pset_szip failed");
                 break;
 
@@ -660,14 +666,13 @@ h5tools_apply_filters(hid_t dcpl_id, h5tools_filter_info_t *filter_info_list, si
                 if (filter_info.cd_values[1] > INT_MAX)
                     H5TOOLS_GOTO_ERROR(FAIL, "Scale Offset scale_factor too large");
 
-                if (H5Pset_scaleoffset(dcpl_id, filter_info.cd_values[0],
-                        (int)filter_info.cd_values[1]) < 0)
+                if (H5Pset_scaleoffset(dcpl_id, filter_info.cd_values[0], (int)filter_info.cd_values[1]) < 0)
                     H5TOOLS_GOTO_ERROR(FAIL, "H5Pset_scaleoffset failed");
                 break;
 
             default:
                 if (H5Pset_filter(dcpl_id, filter_info.filter_id, filter_info.filter_flag,
-                        filter_info.cd_nelmts, filter_info.cd_values) < 0)
+                                  filter_info.cd_nelmts, filter_info.cd_values) < 0)
                     H5TOOLS_GOTO_ERROR(FAIL, "H5Pset_filter failed");
                 break;
         }
@@ -699,7 +704,7 @@ h5tools_dump_filter_list(FILE *stream, h5tools_filter_info_t *filter_info_list, 
 
     for (size_t i = 0; i < num_filters; i++) {
         h5tools_filter_info_t filter_info = filter_info_list[i];
-        const char *filter_name;
+        const char *          filter_name;
 
         if (i > 0)
             HDfprintf(stream, ", ");
@@ -715,7 +720,7 @@ h5tools_dump_filter_list(FILE *stream, h5tools_filter_info_t *filter_info_list, 
         HDassert(filter_name);
 
         HDfprintf(stream, "%s (%s)", filter_name,
-                filter_info.filter_flag == H5Z_FLAG_MANDATORY ? "MANDATORY" : "OPTIONAL");
+                  filter_info.filter_flag == H5Z_FLAG_MANDATORY ? "MANDATORY" : "OPTIONAL");
 
         if (filter_info.cd_nelmts > 0) {
             HDfprintf(stream, " - %s ", filter_param_begin);
@@ -730,13 +735,13 @@ h5tools_dump_filter_list(FILE *stream, h5tools_filter_info_t *filter_info_list, 
                     case H5Z_FILTER_SZIP:
                         HDassert(filter_info.cd_nelmts == H5Z_SZIP_USER_NPARMS);
                         HDfprintf(stream, "Coding Method: %s",
-                                filter_info.cd_values[0] == H5_SZIP_NN_OPTION_MASK ? "NN" : "EC");
+                                  filter_info.cd_values[0] == H5_SZIP_NN_OPTION_MASK ? "NN" : "EC");
                         HDfprintf(stream, ", Pixels-per-block: %u", filter_info.cd_values[1]);
                         break;
                     case H5Z_FILTER_SCALEOFFSET:
                         HDassert(filter_info.cd_nelmts == H5Z_SCALEOFFSET_USER_NPARMS);
                         HDfprintf(stream, "Scale Type: %s",
-                                filter_info.cd_values[0] == H5Z_SO_INT ? "IN" : "DS");
+                                  filter_info.cd_values[0] == H5Z_SO_INT ? "IN" : "DS");
                         HDfprintf(stream, ", Scale Factor: %u", filter_info.cd_values[1]);
                         break;
                     default:
