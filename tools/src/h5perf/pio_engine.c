@@ -2587,6 +2587,13 @@ do_fopen(parameters *param, char *fname, file_descr *fd /*out*/, int flags)
                 GOTOERROR(FAIL);
             }
 
+            if (param->h5_coll_md_reads) {
+                if (H5Pset_all_coll_metadata_ops(acc_tpl, 1) < 0) {
+                    HDfprintf(stderr, "HDF5 Property List Set failed\n");
+                    GOTOERROR(FAIL);
+                }
+            }
+
             /* create the parallel file */
             if (flags & (PIO_CREATE | PIO_WRITE))
                 fd->h5fd = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
