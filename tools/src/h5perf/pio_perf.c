@@ -177,6 +177,7 @@ struct options {
     off_t                 h5_threshold;                     /* threshold for alignment in HDF5 file      */
     int                   h5_use_chunks;                    /* Make HDF5 dataset chunked                 */
     int                   h5_write_only;                    /* Perform the write tests only              */
+    int                   h5_coll_md_reads;                 /* Enable HDF5 collective metadata reads     */
     h5tools_filter_info_t h5_filters[H5_PERF_MAX_NFILTERS]; /* Array of filters to apply to HDF5 dataset */
     int                   h5_num_filters;                   /* Number of entries in HDF5 filters array   */
     int                   verify;                           /* Verify data correctness                   */
@@ -323,19 +324,20 @@ run_test_loop(struct options *opts)
     int        num_procs;
     int        doing_pio; /* if this process is doing PIO */
 
-    parms.num_files      = opts->num_files;
-    parms.num_dsets      = opts->num_dsets;
-    parms.num_iters      = opts->num_iters;
-    parms.blk_size       = opts->blk_size;
-    parms.interleaved    = opts->interleaved;
-    parms.collective     = opts->collective;
-    parms.dim2d          = opts->dim2d;
-    parms.h5_align       = (hsize_t)opts->h5_alignment;
-    parms.h5_thresh      = (hsize_t)opts->h5_threshold;
-    parms.h5_use_chunks  = opts->h5_use_chunks;
-    parms.h5_write_only  = opts->h5_write_only;
-    parms.h5_num_filters = opts->h5_num_filters;
-    parms.verify         = opts->verify;
+    parms.num_files        = opts->num_files;
+    parms.num_dsets        = opts->num_dsets;
+    parms.num_iters        = opts->num_iters;
+    parms.blk_size         = opts->blk_size;
+    parms.interleaved      = opts->interleaved;
+    parms.collective       = opts->collective;
+    parms.dim2d            = opts->dim2d;
+    parms.h5_align         = (hsize_t)opts->h5_alignment;
+    parms.h5_thresh        = (hsize_t)opts->h5_threshold;
+    parms.h5_use_chunks    = opts->h5_use_chunks;
+    parms.h5_write_only    = opts->h5_write_only;
+    parms.h5_coll_md_reads = opts->h5_coll_md_reads;
+    parms.h5_num_filters   = opts->h5_num_filters;
+    parms.verify           = opts->verify;
     HDmemcpy(parms.h5_filters, opts->h5_filters, sizeof(parms.h5_filters));
 
     /* start with max_num_procs and decrement it by half for each loop. */
@@ -1296,28 +1298,29 @@ parse_command_line(int argc, const char *const *argv)
 
     cl_opts = (struct options *)malloc(sizeof(struct options));
 
-    cl_opts->output_file    = NULL;
-    cl_opts->io_types       = 0; /* will set default after parsing options */
-    cl_opts->num_dsets      = 1;
-    cl_opts->num_files      = 1;
-    cl_opts->num_bpp        = 0;
-    cl_opts->num_iters      = 1;
-    cl_opts->max_num_procs  = comm_world_nprocs_g;
-    cl_opts->min_num_procs  = 1;
-    cl_opts->max_xfer_size  = 0;
-    cl_opts->min_xfer_size  = 0;
-    cl_opts->blk_size       = 0;
-    cl_opts->interleaved    = 0;     /* Default to contiguous blocks in dataset */
-    cl_opts->collective     = 0;     /* Default to independent I/O access */
-    cl_opts->dim2d          = 0;     /* Default to 1D */
-    cl_opts->print_times    = FALSE; /* Printing times is off by default */
-    cl_opts->print_raw      = FALSE; /* Printing raw data throughput is off by default */
-    cl_opts->h5_alignment   = 1;     /* No alignment for HDF5 objects by default */
-    cl_opts->h5_threshold   = 1;     /* No threshold for aligning HDF5 objects by default */
-    cl_opts->h5_use_chunks  = FALSE; /* Don't chunk the HDF5 dataset by default */
-    cl_opts->h5_write_only  = FALSE; /* Do both read and write by default */
-    cl_opts->h5_num_filters = 0;
-    cl_opts->verify         = FALSE; /* No Verify data correctness by default */
+    cl_opts->output_file      = NULL;
+    cl_opts->io_types         = 0; /* will set default after parsing options */
+    cl_opts->num_dsets        = 1;
+    cl_opts->num_files        = 1;
+    cl_opts->num_bpp          = 0;
+    cl_opts->num_iters        = 1;
+    cl_opts->max_num_procs    = comm_world_nprocs_g;
+    cl_opts->min_num_procs    = 1;
+    cl_opts->max_xfer_size    = 0;
+    cl_opts->min_xfer_size    = 0;
+    cl_opts->blk_size         = 0;
+    cl_opts->interleaved      = 0;     /* Default to contiguous blocks in dataset */
+    cl_opts->collective       = 0;     /* Default to independent I/O access */
+    cl_opts->dim2d            = 0;     /* Default to 1D */
+    cl_opts->print_times      = FALSE; /* Printing times is off by default */
+    cl_opts->print_raw        = FALSE; /* Printing raw data throughput is off by default */
+    cl_opts->h5_alignment     = 1;     /* No alignment for HDF5 objects by default */
+    cl_opts->h5_threshold     = 1;     /* No threshold for aligning HDF5 objects by default */
+    cl_opts->h5_use_chunks    = FALSE; /* Don't chunk the HDF5 dataset by default */
+    cl_opts->h5_write_only    = FALSE; /* Do both read and write by default */
+    cl_opts->h5_coll_md_reads = FALSE;
+    cl_opts->h5_num_filters   = 0;
+    cl_opts->verify           = FALSE; /* No Verify data correctness by default */
 
     HDmemset(cl_opts->h5_filters, 0, sizeof(cl_opts->h5_filters));
 
@@ -1450,11 +1453,10 @@ parse_command_line(int argc, const char *const *argv)
                 if (!cl_opts->collective)
                     cl_opts->collective = 1;
 
-#if 0 /* XXX */
-                /* Use collective metadata reads for parallel I/O when filters are involved */
-                if (!cl_opts->h5_collective_md_read)
-                    cl_opts->h5_collective_md_read = 1;
-#endif
+                /* Force collective metadata reads when filters are involved */
+                if (!cl_opts->h5_coll_md_reads)
+                    cl_opts->h5_coll_md_reads = 1;
+
                 if (cl_opts->h5_num_filters == H5_PERF_MAX_NFILTERS) {
                     HDfprintf(stderr, "pio_perf: maximum number of filters exceeded\n");
                     HDexit(EXIT_FAILURE);
