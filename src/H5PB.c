@@ -671,17 +671,12 @@ H5PB_read(H5F_shared_t *f_sh, H5FD_mem_t type, haddr_t addr, size_t size, void *
 
 #ifdef H5_HAVE_PARALLEL
     if (H5F_SHARED_HAS_FEATURE(f_sh, H5FD_FEAT_HAS_MPI)) {
-#if 1
-        bypass_pb = TRUE;
-#else
-        /* MSC - why this stopped working ? */
         int mpi_size;
 
         if ((mpi_size = H5F_shared_mpi_get_size(f_sh)) < 0)
             HGOTO_ERROR(H5E_PAGEBUF, H5E_CANTGET, FAIL, "can't retrieve MPI communicator size");
         if (1 != mpi_size)
             bypass_pb = TRUE;
-#endif
     } /* end if */
 #endif
 
@@ -969,17 +964,12 @@ H5PB_write(H5F_shared_t *f_sh, H5FD_mem_t type, haddr_t addr, size_t size, const
 
 #ifdef H5_HAVE_PARALLEL
     if (H5F_SHARED_HAS_FEATURE(f_sh, H5FD_FEAT_HAS_MPI)) {
-#if 1
-        bypass_pb = TRUE;
-#else
-        /* MSC - why this stopped working ? */
         int mpi_size;
 
         if ((mpi_size = H5F_shared_mpi_get_size(f_sh)) < 0)
             HGOTO_ERROR(H5E_PAGEBUF, H5E_CANTGET, FAIL, "can't retrieve MPI communicator size");
         if (1 != mpi_size)
             bypass_pb = TRUE;
-#endif
     } /* end if */
 #endif
 
@@ -1293,7 +1283,11 @@ H5PB_enabled(H5F_shared_t *f_sh, H5FD_mem_t type, hbool_t *enabled)
     hbool_t bypass_pb = FALSE;   /* Whether to bypass page buffering */
     herr_t  ret_value = SUCCEED; /* Return value */
 
+#ifdef H5_HAVE_PARALLEL
+    FUNC_ENTER_NOAPI(FAIL)
+#else
     FUNC_ENTER_NOAPI_NOERR
+#endif
 
     /* Sanity checks */
     assert(f_sh);
@@ -1303,17 +1297,12 @@ H5PB_enabled(H5F_shared_t *f_sh, H5FD_mem_t type, hbool_t *enabled)
 
 #ifdef H5_HAVE_PARALLEL
     if (H5F_SHARED_HAS_FEATURE(f_sh, H5FD_FEAT_HAS_MPI)) {
-#if 1
-        bypass_pb = TRUE;
-#else
-        /* MSC - why this stopped working ? */
         int mpi_size;
 
         if ((mpi_size = H5F_shared_mpi_get_size(f_sh)) < 0)
             HGOTO_ERROR(H5E_PAGEBUF, H5E_CANTGET, FAIL, "can't retrieve MPI communicator size");
         if (1 != mpi_size)
             bypass_pb = TRUE;
-#endif
     } /* end if */
 #endif
 
@@ -1340,6 +1329,9 @@ H5PB_enabled(H5F_shared_t *f_sh, H5FD_mem_t type, hbool_t *enabled)
         /* Page buffer may be enabled */
         *enabled = TRUE;
 
+#ifdef H5_HAVE_PARALLEL
+done:
+#endif
     FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5PB_enabled() */
 
