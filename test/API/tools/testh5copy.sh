@@ -190,7 +190,7 @@ CLEAN_OUTPUT()
 
 # RUNSERIAL is used. Check if it can return exit code from executalbe correctly.
 if [ -n "$RUNSERIAL_NOEXITCODE" ]; then
-    echo "***Warning*** Serial Exit Code is not passed back to shell corretly."
+    echo "***Warning*** Serial Exit Code is not passed back to shell correctly."
     echo "***Warning*** Exit code checking is skipped."
     h5haveexitcode=no
 fi

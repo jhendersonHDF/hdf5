@@ -332,7 +332,7 @@ h5diff_vlstr.txt
 
 # RUNSERIAL is used. Check if it can return exit code from executable correctly.
 if [ -n "$RUNSERIAL_NOEXITCODE" ]; then
-    echo "***Warning*** Serial Exit Code is not passed back to shell corretly."
+    echo "***Warning*** Serial Exit Code is not passed back to shell correctly."
     echo "***Warning*** Exit code checking is skipped."
     h5haveexitcode=no
 fi
@@ -483,7 +483,7 @@ RUNTEST() {
     # don't add exit code check in pmode, as it causes failure. (exit code
     # is from mpirun not tool)
     # if any problem occurs relate to an exit code, it will be caught in
-    # serial mode, so the test is fullfilled.
+    # serial mode, so the test is fulfilled.
     if test $h5haveexitcode = 'yes' -a -z "$pmode"; then
       echo "EXIT CODE: $EXIT_CODE" >> $actual
     fi
@@ -885,7 +885,7 @@ RUNTEST h5diff_206.txt -c $REPACK_OUTPUT_DIR/h5diff_basic2.h5 $REPACK_OUTPUT_DIR
 #RUNTEST h5diff_208.txt -c $REPACK_OUTPUT_DIR/h5diff_dset_zero_dim_size1.h5 $REPACK_OUTPUT_DIR/h5diff_dset_zero_dim_size2.h5
 
 # non-comparable dataset with comparable attribute, and other comparable datasets.
-# Also test non-compatible attributes with different type, dimention, rank.
+# Also test non-compatible attributes with different type, dimension, rank.
 # All the comparables should display differences.
 RUNTEST h5diff_220.txt -c $REPACK_OUTPUT_DIR/non_comparables1.h5 $REPACK_OUTPUT_DIR/non_comparables2.h5 /g1
 
@@ -1048,7 +1048,7 @@ RUNTEST h5diff_224.txt -c $REPACK_OUTPUT_DIR/non_comparables2.h5 $REPACK_OUTPUT_
 #RUNTEST h5diff_475.txt -v h5diff_danglelinks1.h5 h5diff_danglelinks2.h5 /ext_link1
 
 # ##############################################################################
-# # test for group diff recursivly
+# # test for group diff recursively
 # ##############################################################################
 # root
 #RUNTEST h5diff_500.txt -v h5diff_grp_recurse1.h5 h5diff_grp_recurse2.h5 / /
