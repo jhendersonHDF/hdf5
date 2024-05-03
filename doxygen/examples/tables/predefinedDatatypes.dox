@@ -489,6 +489,18 @@
 <td>C-style long double</td>
 </tr>
 <tr>
+<td>#H5T_NATIVE_FLOAT_COMPLEX</td>
+<td>C-style float _Complex (May be H5I_INVALID_HID if platform doesn't support float _Complex type)</td>
+</tr>
+<tr>
+<td>#H5T_NATIVE_DOUBLE_COMPLEX</td>
+<td>C-style double _Complex (May be H5I_INVALID_HID if platform doesn't support double _Complex type)</td>
+</tr>
+<tr>
+<td>#H5T_NATIVE_LDOUBLE_COMPLEX</td>
+<td>C-style long double _Complex (May be H5I_INVALID_HID if platform doesn't support long double _Complex type)</td>
+</tr>
+<tr>
 <td>#H5T_NATIVE_B8</td>
 <td>8-bit bitfield based on native types</td>
 </tr>

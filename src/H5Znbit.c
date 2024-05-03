@@ -239,6 +239,10 @@ H5Z__calc_parms_array(const H5T_t *type, size_t *cd_values_actual_nparms)
                 HGOTO_ERROR(H5E_PLINE, H5E_BADTYPE, FAIL, "nbit cannot compute parameters for datatype");
             break;
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_TIME:
         case H5T_STRING:
         case H5T_BITFIELD:
@@ -331,6 +335,10 @@ H5Z__calc_parms_compound(const H5T_t *type, size_t *cd_values_actual_nparms)
             case H5T_COMPOUND:
                 if (H5Z__calc_parms_compound(dtype_member, cd_values_actual_nparms) == FAIL)
                     HGOTO_ERROR(H5E_PLINE, H5E_BADTYPE, FAIL, "nbit cannot compute parameters for datatype");
+                break;
+
+            case H5T_COMPLEX:
+                /* TODO */
                 break;
 
             case H5T_TIME:
@@ -564,6 +572,10 @@ H5Z__set_parms_array(const H5T_t *type, unsigned *cd_values_index, unsigned cd_v
                 HGOTO_ERROR(H5E_PLINE, H5E_BADTYPE, FAIL, "nbit cannot set parameters for datatype");
             break;
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_TIME:
         case H5T_STRING:
         case H5T_BITFIELD:
@@ -701,6 +713,10 @@ H5Z__set_parms_compound(const H5T_t *type, unsigned *cd_values_index, unsigned c
                 }
                 break;
 
+            case H5T_COMPLEX:
+                /* TODO */
+                break;
+
             case H5T_TIME:
             case H5T_STRING:
             case H5T_BITFIELD:
@@ -793,6 +809,10 @@ H5Z__set_local_nbit(hid_t dcpl_id, hid_t type_id, hid_t space_id)
                 HGOTO_ERROR(H5E_PLINE, H5E_BADTYPE, FAIL, "nbit cannot compute parameters for datatype");
             break;
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_TIME:
         case H5T_STRING:
         case H5T_BITFIELD:
@@ -863,6 +883,10 @@ H5Z__set_local_nbit(hid_t dcpl_id, hid_t type_id, hid_t space_id)
         case H5T_COMPOUND:
             if (H5Z__set_parms_compound(type, &cd_values_index, cd_values, &need_not_compress) < 0)
                 HGOTO_ERROR(H5E_PLINE, H5E_BADTYPE, FAIL, "nbit cannot set parameters for datatype");
+            break;
+
+        case H5T_COMPLEX:
+            /* TODO */
             break;
 
         case H5T_TIME:

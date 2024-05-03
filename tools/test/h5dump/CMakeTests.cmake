@@ -76,6 +76,8 @@
       tcmpdintarray.ddl
       tcmpdints.ddl
       tcmpdintsize.ddl
+      tcomplex.ddl
+      tcomplex_info.ddl
       tcompound_complex2.ddl
       tcomp-1.ddl
       tcomp-2.ddl
@@ -268,6 +270,7 @@
       tcmpdintarray.h5
       tcmpdints.h5
       tcmpdintsize.h5
+      tcomplex.h5
       tcompound.h5
       tcompound_complex.h5
       tcompound_complex2.h5
@@ -1315,6 +1318,10 @@
   # Add tests for _Float16 type
   ADD_H5_TEST (tfloat16 0 --enable-error-stack tfloat16.h5)
   ADD_H5_TEST (tfloat16_be 0 --enable-error-stack tfloat16_be.h5)
+
+  # Add tests for complex numbers
+  ADD_H5_TEST (tcomplex 0 --enable-error-stack tcomplex.h5)
+  ADD_H5_TEST (tcomplex_info 0 --enable-error-stack -p -H tcomplex.h5)
 
   # test for vms
   ADD_H5_TEST (tvms 0 --enable-error-stack tvms.h5)

@@ -620,6 +620,10 @@ h5str_convert(JNIEnv *env, char **in_str, hid_t container, hid_t tid, void *out_
             break;
         }
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_NCLASSES:
         case H5T_NO_CLASS: {
             H5_BAD_ARGUMENT_ERROR(ENVONLY, "h5str_convert: invalid datatype class");
@@ -1482,6 +1486,10 @@ h5str_sprintf(JNIEnv *env, h5str_t *out_str, hid_t container, hid_t tid, void *i
             break;
         }
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_NO_CLASS:
         case H5T_NCLASSES: {
             H5_BAD_ARGUMENT_ERROR(ENVONLY, "h5str_sprintf: invalid datatype class");
@@ -2116,6 +2124,10 @@ h5str_get_little_endian_type(hid_t tid)
             break;
         }
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_NO_CLASS:
         case H5T_NCLASSES: {
             goto done;
@@ -2211,6 +2223,10 @@ h5str_get_big_endian_type(hid_t tid)
 
             break;
         }
+
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
 
         case H5T_NO_CLASS:
         case H5T_NCLASSES: {
@@ -2467,6 +2483,10 @@ h5str_render_bin_output(FILE *stream, hid_t container, hid_t tid, void *_mem, hs
 
             break;
         }
+
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
 
         case H5T_NO_CLASS:
         case H5T_NCLASSES: {
@@ -4312,6 +4332,9 @@ translate_atomic_rbuf(JNIEnv *env, jlong mem_type_id, H5T_class_t type_class, vo
 
             break;
         } /* H5T_STRING */
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
         case H5T_TIME:
         case H5T_NO_CLASS:
         case H5T_NCLASSES:
@@ -4536,6 +4559,9 @@ translate_atomic_wbuf(JNIEnv *env, jobject in_obj, jlong mem_type_id, H5T_class_
             }
             break;
         } /* H5T_STRING */
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
         case H5T_TIME:
         case H5T_NO_CLASS:
         case H5T_NCLASSES:
@@ -4758,6 +4784,9 @@ translate_rbuf(JNIEnv *env, jobjectArray ret_buf, jlong mem_type_id, H5T_class_t
             }
             break;
         }
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
         case H5T_TIME:
         case H5T_NO_CLASS:
         case H5T_NCLASSES:
@@ -4920,6 +4949,9 @@ translate_wbuf(JNIEnv *env, jobjectArray in_buf, jlong mem_type_id, H5T_class_t 
             }
             break;
         }
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
         case H5T_TIME:
         case H5T_NO_CLASS:
         case H5T_NCLASSES:

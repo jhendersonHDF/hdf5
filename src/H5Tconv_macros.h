@@ -804,6 +804,13 @@ typedef struct H5T_conv_hw_t {
         H5T_CONV(H5T_CONV_Xf, STYPE, DTYPE, ST, DT, D_MIN, D_MAX, Y)                                         \
     } while (0)
 
+/* TODO */
+#define H5T_CONV_Zs(STYPE, DTYPE, ST, DT, D_MIN, D_MAX)                                                      \
+    do {                                                                                                     \
+        HDcompile_assert(sizeof(ST) >= sizeof(DT));                                                          \
+        H5T_CONV(H5T_CONV_Zs, STYPE, DTYPE, ST, DT, D_MIN, D_MAX, Y)                                         \
+    } while (0)
+
 /* Since all "no exception" cores do the same thing (assign the value in the
  * source location to the destination location, using casting), use one "core"
  * to do them all.

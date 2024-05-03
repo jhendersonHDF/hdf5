@@ -1,4 +1,4 @@
-/** \page DDLBNF114 DDL in BNF for HDF5 1.14.4 and above
+/** \page DDLBNF114 DDL in BNF for HDF5 1.14.5 and above
 
 \todo Revise this & break it up!
 
@@ -63,7 +63,8 @@ This section contains a brief explanation of the symbols used in the DDL.
                      <group_member>*
                  }
 
-<datatype> ::= <atomic_type> | <compound_type> | <variable_length_type> | <array_type>
+<datatype> ::= <atomic_type> | <compound_type> | <variable_length_type> | <array_type> |
+               <complex_type>
 
 <anon_named_datatype> ::= DATATYPE <anon_named_type_name> {
                               <datatype>
@@ -168,6 +169,15 @@ This section contains a brief explanation of the symbols used in the DDL.
 <enum_symbol> ::= <identifier>
 
 <enum_val> ::= <int_value>
+
+<complex_type> ::= H5T_COMPLEX { <complex_base_type> <complex_base_type> } |
+                   H5T_NATIVE_FLOAT_COMPLEX | H5T_NATIVE_DOUBLE_COMPLEX |
+                   H5T_NATIVE_LDOUBLE_COMPLEX
+
+<complex_base_type> ::= <float>
+// Currently complex number datatypes can only hold homogeneous floating-point
+// type data, but they may be expanded in the future to hold heterogeneous
+// floating-point type data or even non-floating-point type data
 
 <path_name> ::= <path_part>+
 

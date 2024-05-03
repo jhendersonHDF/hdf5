@@ -18,6 +18,10 @@
 #include "h5tools_ref.h"
 #include "h5tools_str.h" /* function prototypes */
 
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+#include <complex.h>
+#endif
+
 /* Copied from hl/src/H5LDprivate.h */
 /* Info about the list of comma-separated compound fields */
 typedef struct H5LD_memb_t {
@@ -1355,6 +1359,61 @@ h5tools_str_sprint(h5tools_str_t *str, const h5tool_format_t *info, hid_t contai
                 h5tools_str_append(str, "%s", OPT(info->vlen_suf, ")"));
                 H5Tclose(memb);
             } break;
+
+            case H5T_COMPLEX:
+                H5TOOLS_DEBUG("H5T_COMPLEX");
+
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+                /* If complex number support is available, use creal/cimag function
+                 * variants to retrieve the real and imaginary parts of the complex
+                 * number and print them in real+imaginary"i" format.
+                 */
+                if (H5Tequal(type, H5T_NATIVE_FLOAT_COMPLEX) == true) {
+                    float _Complex fc;
+                    float real, imag;
+
+                    memcpy(&fc, vp, sizeof(float _Complex));
+
+                    real = crealf(fc);
+                    imag = cimagf(fc);
+
+                    h5tools_str_append(str, OPT(info->fmt_float_complex, "%g%+gi"), (double)real,
+                                       (double)imag);
+                }
+                else if (H5Tequal(type, H5T_NATIVE_DOUBLE_COMPLEX) == true) {
+                    double _Complex dc;
+                    double real, imag;
+
+                    memcpy(&dc, vp, sizeof(double _Complex));
+
+                    real = creal(dc);
+                    imag = cimag(dc);
+
+                    h5tools_str_append(str, OPT(info->fmt_double_complex, "%g%+gi"), real, imag);
+                }
+                else if (H5Tequal(type, H5T_NATIVE_LDOUBLE_COMPLEX) == true) {
+                    long double _Complex ldc;
+                    long double real, imag;
+
+                    memcpy(&ldc, vp, sizeof(long double _Complex));
+
+                    real = creall(ldc);
+                    imag = cimagl(ldc);
+
+                    h5tools_str_append(str, OPT(info->fmt_ldouble_complex, "%Lg%+Lgi"), real, imag);
+                }
+                else
+#endif
+                {
+                    /* Get the base datatype for the complex number type */
+                    memb = H5Tget_super(type);
+
+                    /* TODO: non-native typed complex numbers */
+
+                    H5Tclose(memb);
+                }
+
+                break;
 
             case H5T_TIME:
             case H5T_BITFIELD:

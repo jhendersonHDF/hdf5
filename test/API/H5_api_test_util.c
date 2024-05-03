@@ -85,6 +85,7 @@ static hid_t generate_random_datatype_compound(H5T_class_t parent_class, bool is
 static hid_t generate_random_datatype_reference(H5T_class_t parent_class, bool is_compact);
 static hid_t generate_random_datatype_enum(H5T_class_t parent_class, bool is_compact);
 static hid_t generate_random_datatype_array(H5T_class_t parent_class, bool is_compact);
+static hid_t generate_random_datatype_complex(H5T_class_t parent_class, bool is_compact);
 
 /*
  * Helper function to generate a random HDF5 datatype in order to thoroughly
@@ -165,6 +166,9 @@ roll_datatype:
                 goto roll_datatype;
 
             gen_func = generate_random_datatype_array;
+            break;
+        case H5T_COMPLEX:
+            gen_func = generate_random_datatype_complex;
             break;
         default:
             printf("    invalid datatype class\n");
@@ -598,6 +602,12 @@ done:
     }
 
     return ret_value;
+}
+
+static hid_t
+generate_random_datatype_complex(H5T_class_t H5_ATTR_UNUSED parent_class, bool is_compact)
+{
+    /* TODO */
 }
 
 /*

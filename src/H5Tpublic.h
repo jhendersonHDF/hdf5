@@ -40,6 +40,7 @@ typedef enum H5T_class_t {
     H5T_ENUM      = 8,  /**< enumeration types                       */
     H5T_VLEN      = 9,  /**< variable-Length types                   */
     H5T_ARRAY     = 10, /**< array types                             */
+    H5T_COMPLEX   = 11, /**< complex number types                    */
 
     H5T_NCLASSES /**< sentinel: this must be last             */
 } H5T_class_t;
@@ -805,7 +806,7 @@ H5_DLLVAR hid_t H5T_VAX_F64_g;
 #define H5T_NATIVE_ULLONG (H5OPEN H5T_NATIVE_ULLONG_g)
 /**
  * \ingroup PDTNAT
- * C-style \Code{_Float16}
+ * C-style \Code{_Float16} (May be H5I_INVALID_HID if platform doesn't support _Float16 type)
  */
 #define H5T_NATIVE_FLOAT16 (H5OPEN H5T_NATIVE_FLOAT16_g)
 /**
@@ -823,6 +824,22 @@ H5_DLLVAR hid_t H5T_VAX_F64_g;
  * C-style \Code{long double}
  */
 #define H5T_NATIVE_LDOUBLE (H5OPEN H5T_NATIVE_LDOUBLE_g)
+/**
+ * \ingroup PDTNAT
+ * C-style \Code{float _Complex} (May be H5I_INVALID_HID if platform doesn't support float _Complex type)
+ */
+#define H5T_NATIVE_FLOAT_COMPLEX (H5OPEN H5T_NATIVE_FLOAT_COMPLEX_g)
+/**
+ * \ingroup PDTNAT
+ * C-style \Code{double _Complex} (May be H5I_INVALID_HID if platform doesn't support double _Complex type)
+ */
+#define H5T_NATIVE_DOUBLE_COMPLEX (H5OPEN H5T_NATIVE_DOUBLE_COMPLEX_g)
+/**
+ * \ingroup PDTNAT
+ * C-style \Code{long double _Complex} (May be H5I_INVALID_HID if platform doesn't support long double
+ * _Complex type)
+ */
+#define H5T_NATIVE_LDOUBLE_COMPLEX (H5OPEN H5T_NATIVE_LDOUBLE_COMPLEX_g)
 /**
  * \ingroup PDTNAT
  * HDF5 8-bit bitfield based on native types
@@ -887,6 +904,9 @@ H5_DLLVAR hid_t H5T_NATIVE_FLOAT16_g;
 H5_DLLVAR hid_t H5T_NATIVE_FLOAT_g;
 H5_DLLVAR hid_t H5T_NATIVE_DOUBLE_g;
 H5_DLLVAR hid_t H5T_NATIVE_LDOUBLE_g;
+H5_DLLVAR hid_t H5T_NATIVE_FLOAT_COMPLEX_g;
+H5_DLLVAR hid_t H5T_NATIVE_DOUBLE_COMPLEX_g;
+H5_DLLVAR hid_t H5T_NATIVE_LDOUBLE_COMPLEX_g;
 H5_DLLVAR hid_t H5T_NATIVE_B8_g;
 H5_DLLVAR hid_t H5T_NATIVE_B16_g;
 H5_DLLVAR hid_t H5T_NATIVE_B32_g;
@@ -1731,6 +1751,33 @@ H5_DLL int H5Tget_array_ndims(hid_t type_id);
  */
 H5_DLL int H5Tget_array_dims2(hid_t type_id, hsize_t dims[]);
 
+/* Operations defined on complex number datatypes */
+/**
+ * \ingroup COMPLEX
+ *
+ * \brief Creates a new complex number datatype
+ *
+ * \type_id{base_type_id}, datatype identifier for the base datatype of the
+ *          complex number datatype. Must be a floating-point datatype.
+ *
+ * \return \hid_t{complex number datatype}
+ *
+ * \details H5Tcomplex_create() creates a new complex number datatype consisting
+ *          of real and imaginary number parts. The datatype for both parts of
+ *          the new complex number datatype is based on \p base_type_id, which
+ *          must be a floating-point datatype.
+ *
+ *          When necessary, use H5Tget_super() to determine the base datatype
+ *          of the complex number datatype.
+ *
+ *          The datatype identifier returned from this function should be
+ *          released with H5Tclose() or resource leaks will result.
+ *
+ * \since 1.14.5
+ *
+ */
+H5_DLL hid_t H5Tcomplex_create(hid_t base_type_id);
+
 /* Operations defined on opaque datatypes */
 /**
  * \ingroup OPAQUE
@@ -2343,6 +2390,10 @@ H5_DLL htri_t H5Tis_variable_str(hid_t type_id);
  *          \li #H5T_NATIVE_DOUBLE
  *          \li #H5T_NATIVE_LDOUBLE
  *
+ *          \li #H5T_NATIVE_FLOAT_COMPLEX (if available)
+ *          \li #H5T_NATIVE_DOUBLE_COMPLEX (if available)
+ *          \li #H5T_NATIVE_LDOUBLE_COMPLEX (if available)
+ *
  *          \li #H5T_NATIVE_B8
  *          \li #H5T_NATIVE_B16
  *          \li #H5T_NATIVE_B32
@@ -2415,9 +2466,21 @@ H5_DLL hid_t H5Tget_native_type(hid_t type_id, H5T_direction_t direction);
  *          decrease the size of a compound datatype, but the function will
  *          fail if the new size is too small to accommodate all member fields.
  *
+ *          \li Variable-length datatypes: This function sets the size of
+ *          the base datatype for the variable-length datatype.
+ *
+ *          \li Array datatypes: This function sets the size of the base
+ *          datatype for the array datatype. The array datatype's size is
+ *          then adjusted to be the size of the base datatype multiplied
+ *          by the number of elements in the array datatype's dimensions.
+ *
+ *          \li Complex number datatypes: The size set for a complex number
+ *          datatype is the size for the entire datatype, which is shared
+ *          evenly among the datatype's real and imaginary parts. Thus,
+ *          the specified size must be a multiple of 2.
+ *
  *          \li Ineligible datatypes: This function cannot be used with
- *          enumerated datatypes (#H5T_ENUM), array datatypes (#H5T_ARRAY),
- *          variable-length array datatypes (#H5T_VLEN), or reference datatypes
+ *          enumerated datatypes (#H5T_ENUM) or reference datatypes
  *          (#H5T_REFERENCE).
  *
  * \see H5Tget_size()
@@ -2491,6 +2554,9 @@ H5_DLL herr_t H5Tset_order(hid_t type_id, H5T_order_t order);
  *          locations and sizes of the sign, mantissa, and exponent fields
  *          first.
  *
+ *          When called with a #H5T_COMPLEX datatype, H5Tset_precision() sets
+ *          the precision for the base datatype of the complex number datatype.
+ *
  * \since 1.0.0
  *
  */
@@ -2524,6 +2590,9 @@ H5_DLL herr_t H5Tset_precision(hid_t type_id, size_t prec);
  *          hanging over the edge of the datatype.
  *
  *          The offset of an #H5T_STRING cannot be set to anything but zero.
+ *
+ *          When called with a #H5T_COMPLEX datatype, H5Tset_offset() sets
+ *          the offset for the base datatype of the complex number datatype.
  *
  * \since 1.0.0
  *

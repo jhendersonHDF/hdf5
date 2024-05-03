@@ -33,19 +33,22 @@
 static h5tool_format_t ls_dataformat = {
     0, /*raw */
 
-    "",     /*fmt_raw */
-    "%d",   /*fmt_int */
-    "%u",   /*fmt_uint */
-    "%hhd", /*fmt_schar */
-    "%u",   /*fmt_uchar */
-    "%d",   /*fmt_short */
-    "%u",   /*fmt_ushort */
-    "%ld",  /*fmt_long */
-    "%lu",  /*fmt_ulong */
-    NULL,   /*fmt_llong */
-    NULL,   /*fmt_ullong */
-    "%g",   /*fmt_double */
-    "%g",   /*fmt_float */
+    "",         /*fmt_raw */
+    "%d",       /*fmt_int */
+    "%u",       /*fmt_uint */
+    "%hhd",     /*fmt_schar */
+    "%u",       /*fmt_uchar */
+    "%d",       /*fmt_short */
+    "%u",       /*fmt_ushort */
+    "%ld",      /*fmt_long */
+    "%lu",      /*fmt_ulong */
+    NULL,       /*fmt_llong */
+    NULL,       /*fmt_ullong */
+    "%g",       /*fmt_double */
+    "%g",       /*fmt_float */
+    "%g%+gi",   /*fmt_float_complex */
+    "%g%+gi",   /*fmt_double_complex */
+    "%Lg%+Lgi", /*fmt_ldouble_complex */
 
     0, /*ascii */
     0, /*str_locale */
@@ -438,6 +441,17 @@ print_native_type(h5tools_str_t *buffer, hid_t type, int ind)
         else if (H5Tequal(type, H5T_NATIVE_DOUBLE) == true) {
             h5tools_str_append(buffer, "native double");
         }
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+        else if (H5Tequal(type, H5T_NATIVE_FLOAT_COMPLEX) == true) {
+            h5tools_str_append(buffer, "native float _Complex");
+        }
+        else if (H5Tequal(type, H5T_NATIVE_DOUBLE_COMPLEX) == true) {
+            h5tools_str_append(buffer, "native double _Complex");
+        }
+        else if (H5Tequal(type, H5T_NATIVE_LDOUBLE_COMPLEX) == true) {
+            h5tools_str_append(buffer, "native long double _Complex");
+        }
+#endif
         else if (H5Tequal(type, H5T_NATIVE_INT8) == true) {
             h5tools_str_append(buffer, "native int8_t");
         }
@@ -1252,6 +1266,31 @@ print_bitfield_type(h5tools_str_t *buffer, hid_t type, int ind)
 }
 
 /*-------------------------------------------------------------------------
+ * Function:    print_complex_type
+ *
+ * Purpose:     Print information about a complex number type.
+ *
+ * Return:      Success: true
+ *              Failure: false, nothing printed
+ *-------------------------------------------------------------------------
+ */
+static bool
+print_complex_type(h5tools_str_t *buffer, hid_t type, int ind)
+{
+    hid_t super;
+
+    if (H5T_COMPLEX != H5Tget_class(type))
+        return false;
+
+    h5tools_str_append(buffer, "complex number of\n%*s", ind + 4, "");
+    super = H5Tget_super(type);
+    print_type(buffer, super, ind + 4);
+    H5Tclose(super);
+
+    return true;
+}
+
+/*-------------------------------------------------------------------------
  * Function:    print_type
  *
  * Purpose:     Prints a data type definition.  The definition is printed
@@ -1297,7 +1336,8 @@ print_type(h5tools_str_t *buffer, hid_t type, int ind)
         print_cmpd_type(buffer, type, ind) || print_enum_type(buffer, type, ind) ||
         print_string_type(buffer, type, ind) || print_reference_type(buffer, type, ind) ||
         print_vlen_type(buffer, type, ind) || print_array_type(buffer, type, ind) ||
-        print_opaque_type(buffer, type, ind) || print_bitfield_type(buffer, type, ind))
+        print_opaque_type(buffer, type, ind) || print_bitfield_type(buffer, type, ind) ||
+        print_complex_type(buffer, type, ind))
         return;
 
     /* Unknown type */
@@ -1396,6 +1436,8 @@ dump_dataset_values(hid_t dset)
     outputformat.fmt_float = fmt_float;
     snprintf(fmt_double, sizeof(fmt_double), "%%1.%dg", DBL_DIG);
     outputformat.fmt_double = fmt_double;
+
+    /* TODO: set complex number format here */
 
     if (hexdump_g) {
         /* Print all data in hexadecimal format if the `-x' or `--hexdump'
@@ -1565,6 +1607,8 @@ dump_attribute_values(hid_t attr)
     outputformat.fmt_float = fmt_float;
     snprintf(fmt_double, sizeof(fmt_double), "%%1.%dg", DBL_DIG);
     outputformat.fmt_double = fmt_double;
+
+    /* TODO: set complex number format here */
 
     if (hexdump_g) {
         /* Print all data in hexadecimal format if the `-x' or `--hexdump'
@@ -1987,6 +2031,7 @@ dataset_list2(hid_t dset, const char H5_ATTR_UNUSED *name)
             case H5T_COMPOUND:
             case H5T_ENUM:
             case H5T_ARRAY:
+            case H5T_COMPLEX:
             case H5T_NCLASSES:
             default:
                 h5tools_str_append(&buffer, "%" PRIuHSIZE " logical byte%s, %" PRIuHSIZE " allocated byte%s",

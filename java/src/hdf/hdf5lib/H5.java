@@ -14250,6 +14250,8 @@ public class H5 implements java.io.Serializable {
             retValue = "H5T_VLEN";
         else if (HDF5Constants.H5T_ARRAY == class_id) /* Array types */
             retValue = "H5T_ARRAY";
+        else if (HDF5Constants.H5T_COMPLEX == class_id) /* Complex number types */
+            retValue = "H5T_COMPLEX";
         else
             retValue = "H5T_NO_CLASS";
 

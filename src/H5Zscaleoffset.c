@@ -978,6 +978,10 @@ H5Z__set_local_scaleoffset(hid_t dcpl_id, hid_t type_id, hid_t space_id)
             cd_values[H5Z_SCALEOFFSET_PARM_CLASS] = H5Z_SCALEOFFSET_CLS_FLOAT;
             break;
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_NO_CLASS:
         case H5T_TIME:
         case H5T_STRING:

@@ -117,6 +117,8 @@ dump_attr_cb(hid_t oid, const char *attr_name, const H5A_info_t H5_ATTR_UNUSED *
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -175,6 +177,8 @@ dump_all_cb(hid_t group, const char *name, const H5L_info2_t *linfo, void H5_ATT
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -647,6 +651,8 @@ dump_named_datatype(hid_t tid, const char *name)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -803,6 +809,8 @@ dump_group(hid_t gid, const char *name)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -929,6 +937,8 @@ dump_dataset(hid_t did, const char *name, struct subset_t *sset)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -1038,7 +1048,8 @@ dump_dataset(hid_t did, const char *name, struct subset_t *sset)
                 case H5T_REFERENCE:
                 case H5T_ENUM:
                 case H5T_VLEN:
-                case H5T_ARRAY: {
+                case H5T_ARRAY:
+                case H5T_COMPLEX: {
                     h5tools_dump_data(rawoutstream, outputformat, &ctx, did, true);
                 } break;
 
@@ -1098,6 +1109,8 @@ dump_data(hid_t obj_id, int obj_data, struct subset_t *sset, int display_index)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -1563,6 +1576,8 @@ handle_attributes(hid_t fid, const char *attr, void H5_ATTR_UNUSED *data, int H5
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;

@@ -106,6 +106,7 @@ $SRC_H5DUMP_TESTFILES/tbitnopaque.h5
 $SRC_H5DUMP_TESTFILES/tchar.h5
 $SRC_H5DUMP_TESTFILES/tcmpdattrintsize.h5
 $SRC_H5DUMP_TESTFILES/tcmpdintsize.h5
+$SRC_H5DUMP_TESTFILES/tcomplex.h5
 $SRC_H5DUMP_TESTFILES/tcompound.h5
 $SRC_H5DUMP_TESTFILES/tcompound_complex.h5
 $SRC_H5DUMP_TESTFILES/tcompound_complex2.h5
@@ -253,6 +254,8 @@ $SRC_H5DUMP_OUTFILES/tcomp-1.ddl
 $SRC_H5DUMP_OUTFILES/tcomp-2.ddl
 $SRC_H5DUMP_OUTFILES/tcomp-3.ddl
 $SRC_H5DUMP_OUTFILES/tcomp-4.ddl
+$SRC_H5DUMP_OUTFILES/tcomplex.ddl
+$SRC_H5DUMP_OUTFILES/tcomplex_info.ddl
 $SRC_H5DUMP_OUTFILES/tcompound_complex2.ddl
 $SRC_H5DUMP_OUTFILES/tcompact.ddl
 $SRC_H5DUMP_OUTFILES/tcontents.ddl
@@ -1362,6 +1365,10 @@ TOOLTEST tldouble_scalar.ddl -p --enable-error-stack tldouble_scalar.h5
 # tests for _Float16 type
 TOOLTEST tfloat16.ddl --enable-error-stack tfloat16.h5
 TOOLTEST tfloat16_be.ddl --enable-error-stack tfloat16_be.h5
+
+# tests for complex numbers
+TOOLTEST tcomplex.ddl --enable-error-stack tcomplex.h5
+TOOLTEST tcomplex_info.ddl --enable-error-stack -p -H tcomplex.h5
 
 # test for vms
 TOOLTEST tvms.ddl --enable-error-stack tvms.h5

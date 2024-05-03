@@ -1041,6 +1041,8 @@ public class HDF5Constants {
     /** */
     public static final long H5T_C_S1 = H5T_C_S1();
     /** */
+    public static final int H5T_COMPLEX = H5T_COMPLEX();
+    /** */
     public static final int H5T_COMPOUND = H5T_COMPOUND();
     /** */
     public static final int H5T_CONV_CONV = H5T_CONV_CONV();
@@ -1177,9 +1179,13 @@ public class HDF5Constants {
     /** */
     public static final long H5T_NATIVE_DOUBLE = H5T_NATIVE_DOUBLE();
     /** */
+    public static final long H5T_NATIVE_DOUBLE_COMPLEX = H5T_NATIVE_DOUBLE_COMPLEX();
+    /** */
     public static final long H5T_NATIVE_FLOAT = H5T_NATIVE_FLOAT();
     /** */
     public static final long H5T_NATIVE_FLOAT16 = H5T_NATIVE_FLOAT16();
+    /** */
+    public static final long H5T_NATIVE_FLOAT_COMPLEX = H5T_NATIVE_FLOAT_COMPLEX();
     /** */
     public static final long H5T_NATIVE_HADDR = H5T_NATIVE_HADDR();
     /** */
@@ -1222,6 +1228,8 @@ public class HDF5Constants {
     public static final long H5T_NATIVE_LLONG = H5T_NATIVE_LLONG();
     /** */
     public static final long H5T_NATIVE_LONG = H5T_NATIVE_LONG();
+    /** */
+    public static final long H5T_NATIVE_LDOUBLE_COMPLEX = H5T_NATIVE_LDOUBLE_COMPLEX();
     /** */
     public static final long H5T_NATIVE_OPAQUE = H5T_NATIVE_OPAQUE();
     /** */
@@ -2532,6 +2540,8 @@ public class HDF5Constants {
 
     private static native final long H5T_C_S1();
 
+    private static native final int H5T_COMPLEX();
+
     private static native final int H5T_COMPOUND();
 
     private static native final int H5T_CONV_CONV();
@@ -2668,9 +2678,13 @@ public class HDF5Constants {
 
     private static native final long H5T_NATIVE_DOUBLE();
 
+    private static native final long H5T_NATIVE_DOUBLE_COMPLEX();
+
     private static native final long H5T_NATIVE_FLOAT();
 
     private static native final long H5T_NATIVE_FLOAT16();
+
+    private static native final long H5T_NATIVE_FLOAT_COMPLEX();
 
     private static native final long H5T_NATIVE_HADDR();
 
@@ -2713,6 +2727,8 @@ public class HDF5Constants {
     private static native final long H5T_NATIVE_LLONG();
 
     private static native final long H5T_NATIVE_LONG();
+
+    private static native final long H5T_NATIVE_LDOUBLE_COMPLEX();
 
     private static native final long H5T_NATIVE_OPAQUE();
 

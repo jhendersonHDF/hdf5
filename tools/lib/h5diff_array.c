@@ -149,6 +149,14 @@ static hsize_t diff_ldouble_element(unsigned char *mem1, unsigned char *mem2, hs
 static hsize_t diff_float16_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
                                     diff_opt_t *opts);
 #endif
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+static hsize_t diff_float_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
+                                          diff_opt_t *opts);
+static hsize_t diff_double_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
+                                           diff_opt_t *opts);
+static hsize_t diff_ldouble_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
+                                            diff_opt_t *opts);
+#endif
 static hsize_t diff_schar_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
                                   diff_opt_t *opts);
 static hsize_t diff_uchar_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
@@ -386,8 +394,58 @@ diff_array(void *_mem1, void *_mem2, diff_opt_t *opts, hid_t container1_id, hid_
             }
             break;
 
+        case H5T_COMPLEX:
+            H5TOOLS_DEBUG("type_class:H5T_COMPLEX");
+
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+            if (H5Tequal(opts->m_tid, H5T_NATIVE_FLOAT_COMPLEX) == true) {
+                for (i = 0; i < opts->hs_nelmts; i++) {
+                    nfound += diff_float_complex_element(mem1, mem2, i, opts);
+
+                    mem1 += sizeof(float _Complex);
+                    mem2 += sizeof(float _Complex);
+                    if (opts->count_bool && nfound >= opts->count)
+                        return nfound;
+                }
+            }
+            else if (H5Tequal(opts->m_tid, H5T_NATIVE_DOUBLE_COMPLEX) == true) {
+                for (i = 0; i < opts->hs_nelmts; i++) {
+                    nfound += diff_double_complex_element(mem1, mem2, i, opts);
+
+                    mem1 += sizeof(double _Complex);
+                    mem2 += sizeof(double _Complex);
+                    if (opts->count_bool && nfound >= opts->count)
+                        return nfound;
+                }
+            }
+            else if (H5Tequal(opts->m_tid, H5T_NATIVE_LDOUBLE_COMPLEX) == true) {
+                for (i = 0; i < opts->hs_nelmts; i++) {
+                    nfound += diff_ldouble_complex_element(mem1, mem2, i, opts);
+
+                    mem1 += sizeof(long double _Complex);
+                    mem2 += sizeof(long double _Complex);
+                    if (opts->count_bool && nfound >= opts->count)
+                        return nfound;
+                }
+            }
+            else
+#endif
+            {
+                memset(&members, 0, sizeof(mcomp_t));
+                for (i = 0; i < opts->hs_nelmts; i++) {
+                    H5TOOLS_DEBUG("opts->pos[%" PRIuHSIZE "]:%" PRIuHSIZE " - nelmts:%" PRIuHSIZE, i,
+                                  opts->pos[i], opts->hs_nelmts);
+                    nfound += diff_datum(mem1 + i * size, mem2 + i * size, i, opts, container1_id,
+                                         container2_id, &members);
+                    if (opts->count_bool && nfound >= opts->count)
+                        break;
+                }
+            }
+
+            break;
+
         /*-------------------------------------------------------------------------
-         * Other types than float and integer
+         * Other types than float, integer and complex numbers
          *-------------------------------------------------------------------------
          */
         case H5T_COMPOUND:
@@ -433,6 +491,9 @@ diff_array(void *_mem1, void *_mem2, diff_opt_t *opts, hid_t container1_id, hid_
  *  Recursively call this function for each element
  * H5T_VLEN
  *  Recursively call this function for each element
+ * H5T_COMPLEX
+ *  Recursively call this function for each part of the complex number type
+ *  for each element
  * H5T_STRING
  *  compare byte by byte in a cycle from 0 to type_size. this type_size is the
  *  value obtained by the get_size function but it is the string length for
@@ -1125,6 +1186,19 @@ diff_datum(void *_mem1, void *_mem2, hsize_t elemtno, diff_opt_t *opts, hid_t co
 
             H5Tclose(vl_opts.m_tid);
         } break;
+
+        /*-------------------------------------------------------------------------
+         * H5T_COMPLEX
+         *-------------------------------------------------------------------------
+         */
+        case H5T_COMPLEX: {
+
+            H5TOOLS_DEBUG("H5T_COMPLEX");
+
+            /* TODO */
+
+            break;
+        }
 
         /*-------------------------------------------------------------------------
          * H5T_INTEGER
@@ -2388,6 +2462,53 @@ diff_float16_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx,
 
     H5TOOLS_ENDDEBUG(": %" PRIuHSIZE " zero:%d", nfound, both_zero);
     return nfound;
+}
+#endif
+
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+/*-------------------------------------------------------------------------
+ * Function: diff_float_complex_element
+ *
+ * Purpose:  diff a single H5T_NATIVE_FLOAT_COMPLEX type
+ *
+ * Return:   number of differences found
+ *
+ *-------------------------------------------------------------------------
+ */
+static hsize_t
+diff_float_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx, diff_opt_t *opts)
+{
+    /* TODO */
+}
+
+/*-------------------------------------------------------------------------
+ * Function: diff_double_complex_element
+ *
+ * Purpose:  diff a single H5T_NATIVE_DOUBLE_COMPLEX type
+ *
+ * Return:   number of differences found
+ *
+ *-------------------------------------------------------------------------
+ */
+static hsize_t
+diff_double_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx, diff_opt_t *opts)
+{
+    /* TODO */
+}
+
+/*-------------------------------------------------------------------------
+ * Function: diff_ldouble_complex_element
+ *
+ * Purpose:  diff a single H5T_NATIVE_LDOUBLE_COMPLEX type
+ *
+ * Return:   number of differences found
+ *
+ *-------------------------------------------------------------------------
+ */
+static hsize_t
+diff_ldouble_complex_element(unsigned char *mem1, unsigned char *mem2, hsize_t elem_idx, diff_opt_t *opts)
+{
+    /* TODO */
 }
 #endif
 

@@ -42,7 +42,7 @@
 #endif
 #define SET_ALIGNMENT(TYPE, VAL) H5T_NATIVE_##TYPE##_ALIGN_g = MAX(H5T_NATIVE_##TYPE##_ALIGN_g, VAL)
 
-static const char *FILENAME[] = {"dt_arith1", "dt_arith2", NULL};
+static const char *FILENAME[] = {"dt_arith1", "dt_arith2", "dt_arith3", NULL};
 
 /*
  * Count up or down depending on whether the machine is big endian or little
@@ -983,7 +983,7 @@ test_derived_flt(void)
 
     if (H5Tcommit2(file, "new float type 1", tid1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) < 0) {
         H5_FAILED();
-        printf("Can't set inpad\n");
+        printf("Can't commit datatype\n");
         goto error;
     }
     if (H5Tclose(tid1) < 0) {
@@ -1286,6 +1286,12 @@ test_derived_flt(void)
         printf("Can't close file\n");
         goto error;
     } /* end if */
+
+    if (H5Fdelete(filename, H5P_DEFAULT) < 0) {
+        H5_FAILED();
+        printf("Can't delete file\n");
+        goto error;
+    }
 
     PASSED();
 
@@ -1594,6 +1600,12 @@ test_derived_integer(void)
         goto error;
     } /* end if */
 
+    if (H5Fdelete(filename, H5P_DEFAULT) < 0) {
+        H5_FAILED();
+        printf("Can't delete file\n");
+        goto error;
+    }
+
     free(buf);
     free(saved_buf);
 
@@ -1625,6 +1637,292 @@ error:
     h5_restore_err();
 
     reset_hdf5(); /*print statistics*/
+
+    return MAX((int)fails_this_test, 1);
+}
+
+/*-------------------------------------------------------------------------
+ * Function:    test_derived_complex
+ *
+ * Purpose:     Tests user-defined and query functions of complex number
+ *              types.
+ *
+ * Return:      Success:    0
+ *              Failure:    number of errors
+ *
+ *-------------------------------------------------------------------------
+ */
+static int
+test_derived_complex(void)
+{
+    unsigned char *buf             = NULL;
+    unsigned char *saved_buf       = NULL;
+    unsigned int   fails_this_test = 0;
+    const size_t   max_fails       = 40;
+    size_t         spos, epos, esize, mpos, msize, size;
+    size_t         src_size;
+    size_t         nelmts  = NTESTELEM;
+    hid_t          file    = H5I_INVALID_HID;
+    hid_t          dxpl_id = H5I_INVALID_HID;
+    hid_t          tid     = H5I_INVALID_HID;
+    hid_t          flt_tid = H5I_INVALID_HID;
+    char           filename[1024];
+    char           str[256];
+    int           *aligned = NULL;
+    int            endian;
+
+    TESTING("user-defined and query functions of complex number types");
+
+    /* Create File */
+    h5_fixname(FILENAME[2], H5P_DEFAULT, filename, sizeof filename);
+    if ((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT)) < 0) {
+        H5_FAILED();
+        printf("Can't create file\n");
+        goto error;
+    }
+
+    if ((dxpl_id = H5Pcreate(H5P_DATASET_XFER)) < 0) {
+        H5_FAILED();
+        printf("Can't create data transfer property list\n");
+        goto error;
+    }
+
+    /*------------------------------------------------------------------------
+     *                   derived floating-point type
+     * size=7 byte, precision=42 bits, offset=3 bits, mantissa size=31 bits,
+     * mantissa position=3, exponent size=10 bits, exponent position=34,
+     * exponent bias=511.  It can be illustrated in little-endian order as
+     *
+     *          6       5       4       3       2       1       0
+     *    ???????? ???SEEEE EEEEEEMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMM???
+     *
+     * To create a new floating-point type, the following properties must be
+     * set in the order of
+     *   set fields -> set offset -> set precision -> set size.
+     * All these properties must be set before the type can function. Other
+     * properties can be set anytime.  Derived type size cannot be expanded
+     * bigger than original size but can be decreased.  There should be no
+     * holes among the significant bits.  Exponent bias usually is set
+     * 2^(n-1)-1, where n is the exponent size.
+     *-----------------------------------------------------------------------*/
+    if ((flt_tid = H5Tcopy(H5T_IEEE_F64LE)) < 0) {
+        H5_FAILED();
+        printf("Can't copy data type\n");
+        goto error;
+    }
+    if (H5Tset_fields(flt_tid, (size_t)44, (size_t)34, (size_t)10, (size_t)3, (size_t)31) < 0) {
+        H5_FAILED();
+        printf("Can't set fields\n");
+        goto error;
+    }
+    if (H5Tset_offset(flt_tid, (size_t)3) < 0) {
+        H5_FAILED();
+        printf("Can't set offset\n");
+        goto error;
+    }
+    if (H5Tset_precision(flt_tid, (size_t)42) < 0) {
+        H5_FAILED();
+        printf("Can't set precision 1\n");
+        goto error;
+    }
+    if (H5Tset_size(flt_tid, (size_t)7) < 0) {
+        H5_FAILED();
+        printf("Can't set size\n");
+        goto error;
+    }
+    if (H5Tset_ebias(flt_tid, (size_t)511) < 0) {
+        H5_FAILED();
+        printf("Can't set exponent bias\n");
+        goto error;
+    }
+    if (H5Tset_pad(flt_tid, H5T_PAD_ZERO, H5T_PAD_ZERO) < 0) {
+        H5_FAILED();
+        printf("Can't set padding\n");
+        goto error;
+    }
+
+    /* Create complex number type from derived floating-point type */
+    if ((tid = H5Tcomplex_create(flt_tid)) < 0) {
+        H5_FAILED();
+        printf("Can't create complex number type\n");
+        goto error;
+    }
+
+    if (H5Tcommit2(file, "new complex number type 1", tid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) < 0) {
+        H5_FAILED();
+        printf("Can't commit datatype\n");
+        goto error;
+    }
+    if (H5Tclose(tid) < 0) {
+        H5_FAILED();
+        printf("Can't close datatype\n");
+        goto error;
+    }
+
+    if ((tid = H5Topen2(file, "new complex number type 1", H5P_DEFAULT)) < 0)
+        FAIL_PUTS_ERROR("Can't open datatype");
+    if (H5Tget_fields(tid, &spos, &epos, &esize, &mpos, &msize) < 0) {
+        H5_FAILED();
+        printf("Can't get fields\n");
+        goto error;
+    }
+    if (spos != 44 || epos != 34 || esize != 10 || mpos != 3 || msize != 31) {
+        H5_FAILED();
+        printf("Wrong field values\n");
+        goto error;
+    }
+    if (H5Tget_precision(tid) != 42) {
+        H5_FAILED();
+        printf("Can't get precision or wrong precision\n");
+        goto error;
+    }
+    if (H5Tget_offset(tid) != 3) {
+        H5_FAILED();
+        printf("Can't get offset or wrong offset\n");
+        goto error;
+    }
+    if ((size = H5Tget_size(tid)) != 14) { /* Size of complex number type is 2 * floating-point type size */
+        H5_FAILED();
+        printf("Can't get size or wrong size\n");
+        goto error;
+    }
+    if (H5Tget_ebias(tid) != 511) {
+        H5_FAILED();
+        printf("Can't get exponent bias or wrong bias\n");
+        goto error;
+    }
+
+    /* Convert data from native integer to the derived complex number type.
+     * Then convert data from the complex number type back to native integer.
+     * Compare the final data with the original data.
+     */
+    src_size  = H5Tget_size(H5T_NATIVE_INT);
+    endian    = H5Tget_order(H5T_NATIVE_INT);
+    buf       = malloc(nelmts * (MAX(src_size, size)));
+    saved_buf = malloc(nelmts * src_size);
+    aligned   = calloc((size_t)1, src_size);
+    memset(buf, 0, nelmts * MAX(src_size, size));
+    memset(saved_buf, 0, nelmts * src_size);
+
+    for (size_t i = 0; i < nelmts * src_size; i++)
+        buf[i] = saved_buf[i] = (unsigned char)rand();
+
+    if (H5Tconvert(H5T_NATIVE_INT, tid, nelmts, buf, NULL, dxpl_id) < 0) {
+        H5_FAILED();
+        printf("Can't convert data\n");
+        goto error;
+    }
+    if (H5Tconvert(tid, H5T_NATIVE_INT, nelmts, buf, NULL, dxpl_id) < 0) {
+        H5_FAILED();
+        printf("Can't convert data\n");
+        goto error;
+    }
+
+    /* Are the values still the same?*/
+    for (size_t i = 0; i < nelmts; i++) {
+        size_t j;
+
+        for (j = 0; j < src_size; j++)
+            if (buf[i * src_size + j] != saved_buf[i * src_size + j])
+                break;
+        if (j == src_size)
+            continue; /*no error*/
+
+        /* Print errors */
+        if (0 == fails_this_test++) {
+            snprintf(str, sizeof(str),
+                     "\nTesting conversions between random integers and derived complex number type");
+            printf("%-70s", str);
+            fflush(stdout);
+            H5_FAILED();
+        }
+        printf("    test %u elmt %u: \n", 1, (unsigned)i);
+
+        printf("        src = ");
+        for (j = 0; j < src_size; j++)
+            printf(" %02x", saved_buf[i * src_size + ENDIAN(src_size, j, endian)]);
+
+        memcpy(aligned, saved_buf + i * sizeof(int), sizeof(int));
+        printf(" %29d\n", *aligned);
+
+        printf("        dst = ");
+        for (j = 0; j < src_size; j++)
+            printf(" %02x", buf[i * src_size + ENDIAN(src_size, j, endian)]);
+
+        memcpy(aligned, buf + i * sizeof(int), sizeof(int));
+        printf(" %29d\n", *aligned);
+
+        if (fails_this_test >= max_fails) {
+            puts("    maximum failures reached, aborting test...");
+            goto error;
+        }
+    }
+
+    fails_this_test = 0;
+    free(buf);
+    free(saved_buf);
+    free(aligned);
+    buf       = NULL;
+    saved_buf = NULL;
+    aligned   = NULL;
+
+    if (H5Tclose(flt_tid) < 0) {
+        H5_FAILED();
+        printf("Can't close datatype\n");
+        goto error;
+    }
+
+    if (H5Tclose(tid) < 0) {
+        H5_FAILED();
+        printf("Can't close datatype\n");
+        goto error;
+    }
+
+    if (H5Pclose(dxpl_id) < 0) {
+        H5_FAILED();
+        printf("Can't close property list\n");
+        goto error;
+    }
+
+    if (H5Fclose(file) < 0) {
+        H5_FAILED();
+        printf("Can't close file\n");
+        goto error;
+    }
+
+    if (H5Fdelete(filename, H5P_DEFAULT) < 0) {
+        H5_FAILED();
+        printf("Can't delete file\n");
+        goto error;
+    }
+
+    PASSED();
+
+    /* Restore the default error handler (set in h5_reset()) */
+    h5_restore_err();
+
+    reset_hdf5();
+
+    return 0;
+
+error:
+    free(buf);
+    free(saved_buf);
+    free(aligned);
+
+    H5E_BEGIN_TRY
+    {
+        H5Tclose(flt_tid);
+        H5Tclose(tid);
+        H5Pclose(dxpl_id);
+        H5Fclose(file);
+    }
+    H5E_END_TRY
+
+    /* Restore the default error handler (set in h5_reset()) */
+    h5_restore_err();
+
+    reset_hdf5();
 
     return MAX((int)fails_this_test, 1);
 }
@@ -5656,6 +5954,21 @@ done:
 }
 
 /*-------------------------------------------------------------------------
+ * Function:    run_complex_num_tests
+ *
+ * Purpose:     Runs all complex number tests.
+ *
+ * Return:      Number of errors
+ *
+ *-------------------------------------------------------------------------
+ */
+static int
+run_complex_num_tests(const char *name)
+{
+    /* TODO */
+}
+
+/*-------------------------------------------------------------------------
  * Function:    run_int_fp_conv
  *
  * Purpose:    Runs all integer-float tests.
@@ -5997,6 +6310,10 @@ main(void)
     /* Test user-defined, query functions and software conversion
      * for user-defined integer types */
     nerrors += (unsigned long)test_derived_integer();
+
+    /* Test user-defined, query functions and software conversion
+     * for user-defined complex number types */
+    nerrors += (unsigned long)test_derived_complex();
 
     /* Test degenerate cases */
     nerrors += (unsigned long)run_fp_tests("noop");

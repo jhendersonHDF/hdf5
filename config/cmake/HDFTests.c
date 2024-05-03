@@ -118,3 +118,34 @@ main(void)
 #endif
 }
 #endif
+
+#ifdef HAVE_STDC_NO_COMPLEX
+#ifndef __STDC_NO_COMPLEX__
+#error "__STDC_NO_COMPLEX__ not defined"
+#else
+int
+main(void)
+{
+    return 0;
+}
+#endif
+#endif
+
+#ifdef HAVE_COMPLEX_NUMBERS
+#include <complex.h>
+
+int
+main(void)
+{
+    float _Complex z1       = 1.0f + 3.0f * I;
+    double _Complex z2      = 2.0 + 4.0 * I;
+    long double _Complex z3 = 3.0L + 5.0L * I;
+    float r1                = creal(z1);
+    float i1                = cimag(z1);
+    double r2               = creal(z2);
+    double i2               = cimage(z2);
+    long double r3          = creal(z3);
+    long double i3          = cimag(z3);
+    return 0;
+}
+#endif

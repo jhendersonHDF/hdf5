@@ -469,30 +469,33 @@ hid_t H5T_C_S1_g = H5I_INVALID_HID;
 
 hid_t H5T_FORTRAN_S1_g = H5I_INVALID_HID;
 
-hid_t H5T_NATIVE_SCHAR_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_UCHAR_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_SHORT_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_USHORT_g  = H5I_INVALID_HID;
-hid_t H5T_NATIVE_INT_g     = H5I_INVALID_HID;
-hid_t H5T_NATIVE_UINT_g    = H5I_INVALID_HID;
-hid_t H5T_NATIVE_LONG_g    = H5I_INVALID_HID;
-hid_t H5T_NATIVE_ULONG_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_LLONG_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_ULLONG_g  = H5I_INVALID_HID;
-hid_t H5T_NATIVE_FLOAT16_g = H5I_INVALID_HID;
-hid_t H5T_NATIVE_FLOAT_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_DOUBLE_g  = H5I_INVALID_HID;
-hid_t H5T_NATIVE_LDOUBLE_g = H5I_INVALID_HID;
-hid_t H5T_NATIVE_B8_g      = H5I_INVALID_HID;
-hid_t H5T_NATIVE_B16_g     = H5I_INVALID_HID;
-hid_t H5T_NATIVE_B32_g     = H5I_INVALID_HID;
-hid_t H5T_NATIVE_B64_g     = H5I_INVALID_HID;
-hid_t H5T_NATIVE_OPAQUE_g  = H5I_INVALID_HID;
-hid_t H5T_NATIVE_HADDR_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_HSIZE_g   = H5I_INVALID_HID;
-hid_t H5T_NATIVE_HSSIZE_g  = H5I_INVALID_HID;
-hid_t H5T_NATIVE_HERR_g    = H5I_INVALID_HID;
-hid_t H5T_NATIVE_HBOOL_g   = H5I_INVALID_HID;
+hid_t H5T_NATIVE_SCHAR_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_UCHAR_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_SHORT_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_USHORT_g          = H5I_INVALID_HID;
+hid_t H5T_NATIVE_INT_g             = H5I_INVALID_HID;
+hid_t H5T_NATIVE_UINT_g            = H5I_INVALID_HID;
+hid_t H5T_NATIVE_LONG_g            = H5I_INVALID_HID;
+hid_t H5T_NATIVE_ULONG_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_LLONG_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_ULLONG_g          = H5I_INVALID_HID;
+hid_t H5T_NATIVE_FLOAT16_g         = H5I_INVALID_HID;
+hid_t H5T_NATIVE_FLOAT_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_DOUBLE_g          = H5I_INVALID_HID;
+hid_t H5T_NATIVE_LDOUBLE_g         = H5I_INVALID_HID;
+hid_t H5T_NATIVE_FLOAT_COMPLEX_g   = H5I_INVALID_HID;
+hid_t H5T_NATIVE_DOUBLE_COMPLEX_g  = H5I_INVALID_HID;
+hid_t H5T_NATIVE_LDOUBLE_COMPLEX_g = H5I_INVALID_HID;
+hid_t H5T_NATIVE_B8_g              = H5I_INVALID_HID;
+hid_t H5T_NATIVE_B16_g             = H5I_INVALID_HID;
+hid_t H5T_NATIVE_B32_g             = H5I_INVALID_HID;
+hid_t H5T_NATIVE_B64_g             = H5I_INVALID_HID;
+hid_t H5T_NATIVE_OPAQUE_g          = H5I_INVALID_HID;
+hid_t H5T_NATIVE_HADDR_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_HSIZE_g           = H5I_INVALID_HID;
+hid_t H5T_NATIVE_HSSIZE_g          = H5I_INVALID_HID;
+hid_t H5T_NATIVE_HERR_g            = H5I_INVALID_HID;
+hid_t H5T_NATIVE_HBOOL_g           = H5I_INVALID_HID;
 
 hid_t H5T_NATIVE_INT8_g        = H5I_INVALID_HID;
 hid_t H5T_NATIVE_UINT8_g       = H5I_INVALID_HID;
@@ -538,20 +541,23 @@ size_t H5T_HOBJREF_ALIGN_g     = 0;
 size_t H5T_HDSETREGREF_ALIGN_g = 0;
 size_t H5T_REF_ALIGN_g         = 0;
 
-size_t H5T_NATIVE_SCHAR_ALIGN_g   = 0;
-size_t H5T_NATIVE_UCHAR_ALIGN_g   = 0;
-size_t H5T_NATIVE_SHORT_ALIGN_g   = 0;
-size_t H5T_NATIVE_USHORT_ALIGN_g  = 0;
-size_t H5T_NATIVE_INT_ALIGN_g     = 0;
-size_t H5T_NATIVE_UINT_ALIGN_g    = 0;
-size_t H5T_NATIVE_LONG_ALIGN_g    = 0;
-size_t H5T_NATIVE_ULONG_ALIGN_g   = 0;
-size_t H5T_NATIVE_LLONG_ALIGN_g   = 0;
-size_t H5T_NATIVE_ULLONG_ALIGN_g  = 0;
-size_t H5T_NATIVE_FLOAT16_ALIGN_g = 0;
-size_t H5T_NATIVE_FLOAT_ALIGN_g   = 0;
-size_t H5T_NATIVE_DOUBLE_ALIGN_g  = 0;
-size_t H5T_NATIVE_LDOUBLE_ALIGN_g = 0;
+size_t H5T_NATIVE_SCHAR_ALIGN_g           = 0;
+size_t H5T_NATIVE_UCHAR_ALIGN_g           = 0;
+size_t H5T_NATIVE_SHORT_ALIGN_g           = 0;
+size_t H5T_NATIVE_USHORT_ALIGN_g          = 0;
+size_t H5T_NATIVE_INT_ALIGN_g             = 0;
+size_t H5T_NATIVE_UINT_ALIGN_g            = 0;
+size_t H5T_NATIVE_LONG_ALIGN_g            = 0;
+size_t H5T_NATIVE_ULONG_ALIGN_g           = 0;
+size_t H5T_NATIVE_LLONG_ALIGN_g           = 0;
+size_t H5T_NATIVE_ULLONG_ALIGN_g          = 0;
+size_t H5T_NATIVE_FLOAT16_ALIGN_g         = 0;
+size_t H5T_NATIVE_FLOAT_ALIGN_g           = 0;
+size_t H5T_NATIVE_DOUBLE_ALIGN_g          = 0;
+size_t H5T_NATIVE_LDOUBLE_ALIGN_g         = 0;
+size_t H5T_NATIVE_FLOAT_COMPLEX_ALIGN_g   = 0;
+size_t H5T_NATIVE_DOUBLE_COMPLEX_ALIGN_g  = 0;
+size_t H5T_NATIVE_LDOUBLE_COMPLEX_ALIGN_g = 0;
 
 /* Alignment constraints for C99 types */
 size_t H5T_NATIVE_INT8_ALIGN_g        = 0;
@@ -844,6 +850,11 @@ H5T_init(void)
 #ifdef H5_HAVE__FLOAT16
     H5T_t *native_float16 = NULL; /* Datatype structure for native _Float16 type */
 #endif
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+    H5T_t *native_float_complex   = NULL; /* Datatype structure for native float _Complex type */
+    H5T_t *native_double_complex  = NULL; /* Datatype structure for native double _Complex type */
+    H5T_t *native_ldouble_complex = NULL; /* Datatype structure for native long double _Complex type */
+#endif
     herr_t ret_value = SUCCEED; /* Return value */
 
     FUNC_ENTER_NOAPI(FAIL)
@@ -859,6 +870,12 @@ H5T_init(void)
     /* Initialize native floating-point datatypes */
     if (H5T__init_native_float_types() < 0)
         HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, "unable to initialize floating-point types");
+
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+    /* Initialize native complex number datatypes */
+    if (H5T__init_native_complex_types() < 0)
+        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, "unable to initialize complex number types");
+#endif
 
     /* Initialize all other native types */
     if (H5T__init_native_internal() < 0)
@@ -895,6 +912,14 @@ H5T_init(void)
         HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype object");
     if (NULL == (native_ldouble = (H5T_t *)H5I_object(H5T_NATIVE_LDOUBLE_g)))
         HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype object");
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+    if (NULL == (native_float_complex = (H5T_t *)H5I_object(H5T_NATIVE_FLOAT_COMPLEX_g)))
+        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype object");
+    if (NULL == (native_double_complex = (H5T_t *)H5I_object(H5T_NATIVE_DOUBLE_COMPLEX_g)))
+        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype object");
+    if (NULL == (native_ldouble_complex = (H5T_t *)H5I_object(H5T_NATIVE_LDOUBLE_COMPLEX_g)))
+        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype object");
+#endif
 
     /*------------------------------------------------------------
      * Derived native types
@@ -1155,7 +1180,8 @@ H5T_init(void)
     status |= H5T__register_int(H5T_PERS_SOFT, "regref", regref, regref, H5T__conv_noop);
     status |= H5T__register_int(H5T_PERS_SOFT, "ref", ref, ref, H5T__conv_ref);
     status |= H5T__register_int(H5T_PERS_SOFT, "objref_ref", objref, ref, H5T__conv_ref);
-    status |= H5T__register_int(H5T_PERS_SOFT, "regref_ref", regref, ref, H5T__conv_ref);
+    status |= H5T__register_int(H5T_PERS_SOFT, "regref_ref", regref, ref,
+                                H5T__conv_ref); /* TODO: complex number conversions */
 
     /*
      * Native conversions should be listed last since we can use hardware to
@@ -1765,30 +1791,33 @@ H5T_top_term_package(void)
 
         H5T_FORTRAN_S1_g = H5I_INVALID_HID;
 
-        H5T_NATIVE_SCHAR_g   = H5I_INVALID_HID;
-        H5T_NATIVE_UCHAR_g   = H5I_INVALID_HID;
-        H5T_NATIVE_SHORT_g   = H5I_INVALID_HID;
-        H5T_NATIVE_USHORT_g  = H5I_INVALID_HID;
-        H5T_NATIVE_INT_g     = H5I_INVALID_HID;
-        H5T_NATIVE_UINT_g    = H5I_INVALID_HID;
-        H5T_NATIVE_LONG_g    = H5I_INVALID_HID;
-        H5T_NATIVE_ULONG_g   = H5I_INVALID_HID;
-        H5T_NATIVE_LLONG_g   = H5I_INVALID_HID;
-        H5T_NATIVE_ULLONG_g  = H5I_INVALID_HID;
-        H5T_NATIVE_FLOAT16_g = H5I_INVALID_HID;
-        H5T_NATIVE_FLOAT_g   = H5I_INVALID_HID;
-        H5T_NATIVE_DOUBLE_g  = H5I_INVALID_HID;
-        H5T_NATIVE_LDOUBLE_g = H5I_INVALID_HID;
-        H5T_NATIVE_B8_g      = H5I_INVALID_HID;
-        H5T_NATIVE_B16_g     = H5I_INVALID_HID;
-        H5T_NATIVE_B32_g     = H5I_INVALID_HID;
-        H5T_NATIVE_B64_g     = H5I_INVALID_HID;
-        H5T_NATIVE_OPAQUE_g  = H5I_INVALID_HID;
-        H5T_NATIVE_HADDR_g   = H5I_INVALID_HID;
-        H5T_NATIVE_HSIZE_g   = H5I_INVALID_HID;
-        H5T_NATIVE_HSSIZE_g  = H5I_INVALID_HID;
-        H5T_NATIVE_HERR_g    = H5I_INVALID_HID;
-        H5T_NATIVE_HBOOL_g   = H5I_INVALID_HID;
+        H5T_NATIVE_SCHAR_g           = H5I_INVALID_HID;
+        H5T_NATIVE_UCHAR_g           = H5I_INVALID_HID;
+        H5T_NATIVE_SHORT_g           = H5I_INVALID_HID;
+        H5T_NATIVE_USHORT_g          = H5I_INVALID_HID;
+        H5T_NATIVE_INT_g             = H5I_INVALID_HID;
+        H5T_NATIVE_UINT_g            = H5I_INVALID_HID;
+        H5T_NATIVE_LONG_g            = H5I_INVALID_HID;
+        H5T_NATIVE_ULONG_g           = H5I_INVALID_HID;
+        H5T_NATIVE_LLONG_g           = H5I_INVALID_HID;
+        H5T_NATIVE_ULLONG_g          = H5I_INVALID_HID;
+        H5T_NATIVE_FLOAT16_g         = H5I_INVALID_HID;
+        H5T_NATIVE_FLOAT_g           = H5I_INVALID_HID;
+        H5T_NATIVE_DOUBLE_g          = H5I_INVALID_HID;
+        H5T_NATIVE_LDOUBLE_g         = H5I_INVALID_HID;
+        H5T_NATIVE_FLOAT_COMPLEX_g   = H5I_INVALID_HID;
+        H5T_NATIVE_DOUBLE_COMPLEX_g  = H5I_INVALID_HID;
+        H5T_NATIVE_LDOUBLE_COMPLEX_g = H5I_INVALID_HID;
+        H5T_NATIVE_B8_g              = H5I_INVALID_HID;
+        H5T_NATIVE_B16_g             = H5I_INVALID_HID;
+        H5T_NATIVE_B32_g             = H5I_INVALID_HID;
+        H5T_NATIVE_B64_g             = H5I_INVALID_HID;
+        H5T_NATIVE_OPAQUE_g          = H5I_INVALID_HID;
+        H5T_NATIVE_HADDR_g           = H5I_INVALID_HID;
+        H5T_NATIVE_HSIZE_g           = H5I_INVALID_HID;
+        H5T_NATIVE_HSSIZE_g          = H5I_INVALID_HID;
+        H5T_NATIVE_HERR_g            = H5I_INVALID_HID;
+        H5T_NATIVE_HBOOL_g           = H5I_INVALID_HID;
 
         H5T_NATIVE_INT8_g        = H5I_INVALID_HID;
         H5T_NATIVE_UINT8_g       = H5I_INVALID_HID;
@@ -1919,19 +1948,19 @@ H5Tcreate(H5T_class_t type, size_t size)
     H5T_t *dt = NULL; /* New datatype constructed */
     hid_t  ret_value; /* Return value */
 
-    FUNC_ENTER_API(FAIL)
+    FUNC_ENTER_API(H5I_INVALID_HID)
 
     /* check args. We support string (fixed-size or variable-length) now. */
     if (size <= 0 && size != H5T_VARIABLE)
-        HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, FAIL, "size must be positive");
+        HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, H5I_INVALID_HID, "size must be positive");
 
     /* create the type */
     if (NULL == (dt = H5T__create(type, size)))
-        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, "unable to create type");
+        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, H5I_INVALID_HID, "unable to create type");
 
     /* Get an ID for the datatype */
     if ((ret_value = H5I_register(H5I_DATATYPE, dt, true)) < 0)
-        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTREGISTER, FAIL, "unable to register datatype ID");
+        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTREGISTER, H5I_INVALID_HID, "unable to register datatype ID");
 
 done:
     FUNC_LEAVE_API(ret_value)
@@ -2340,7 +2369,7 @@ H5T_detect_class(const H5T_t *dt, H5T_class_t cls, bool from_api)
                     HGOTO_DONE(true);
 
                 /* Recurse if it's VL, compound, enum or array */
-                if (H5T_IS_COMPLEX(dt->shared->u.compnd.memb[i].type->shared->type))
+                if (H5T_IS_COMPOSITE(dt->shared->u.compnd.memb[i].type->shared->type))
                     if ((nested_ret = H5T_detect_class(dt->shared->u.compnd.memb[i].type, cls, from_api)) !=
                         false)
                         HGOTO_DONE(nested_ret);
@@ -2350,6 +2379,10 @@ H5T_detect_class(const H5T_t *dt, H5T_class_t cls, bool from_api)
         case H5T_ARRAY:
         case H5T_VLEN:
         case H5T_ENUM:
+            HGOTO_DONE(H5T_detect_class(dt->shared->parent, cls, from_api));
+            break;
+        case H5T_COMPLEX:
+            assert(dt->shared->u.complex.homogeneous);
             HGOTO_DONE(H5T_detect_class(dt->shared->parent, cls, from_api));
             break;
         case H5T_NO_CLASS:
@@ -3219,11 +3252,11 @@ H5Tdecode(const void *buf)
     H5T_t *dt;
     hid_t  ret_value; /* Return value */
 
-    FUNC_ENTER_API(FAIL)
+    FUNC_ENTER_API(H5I_INVALID_HID)
 
     /* Check args */
     if (buf == NULL)
-        HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, FAIL, "empty buffer");
+        HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, H5I_INVALID_HID, "empty buffer");
 
     /* Create datatype by decoding buffer
      * There is no way to get the size of the buffer, so we pass in
@@ -3232,11 +3265,11 @@ H5Tdecode(const void *buf)
      * takes a size parameter.
      */
     if (NULL == (dt = H5T_decode(SIZE_MAX, (const unsigned char *)buf)))
-        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTDECODE, FAIL, "can't decode object");
+        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTDECODE, H5I_INVALID_HID, "can't decode object");
 
     /* Register the type and return the ID */
     if ((ret_value = H5I_register(H5I_DATATYPE, dt, true)) < 0)
-        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTREGISTER, FAIL, "unable to register data type");
+        HGOTO_ERROR(H5E_DATATYPE, H5E_CANTREGISTER, H5I_INVALID_HID, "unable to register data type");
 
 done:
     FUNC_LEAVE_API(ret_value)
@@ -3441,6 +3474,9 @@ H5T__create(H5T_class_t type, size_t size)
 
         case H5T_ARRAY: /* Array datatype */
             HGOTO_ERROR(H5E_DATATYPE, H5E_UNSUPPORTED, NULL, "base type required - use H5Tarray_create2()");
+
+        case H5T_COMPLEX: /* Complex number datatype */
+            HGOTO_ERROR(H5E_DATATYPE, H5E_UNSUPPORTED, NULL, "base type required - use H5Tcomplex_create()");
 
         case H5T_NO_CLASS:
         case H5T_REFERENCE:
@@ -3743,6 +3779,7 @@ H5T__complete_copy(H5T_t *new_dt, const H5T_t *old_dt, H5T_shared_t *reopened_fo
             case H5T_TIME:
             case H5T_STRING:
             case H5T_BITFIELD:
+            case H5T_COMPLEX:
             case H5T_NCLASSES:
             default:
                 break;
@@ -4111,6 +4148,7 @@ H5T__free(H5T_t *dt)
         case H5T_REFERENCE:
         case H5T_VLEN:
         case H5T_ARRAY:
+        case H5T_COMPLEX:
         case H5T_NCLASSES:
         default:
             break;
@@ -4293,12 +4331,28 @@ H5T__set_size(H5T_t *dt, size_t size)
     assert(!(H5T_ENUM == dt->shared->type && 0 == dt->shared->u.enumer.nmembs));
 
     if (dt->shared->parent) {
-        if (H5T__set_size(dt->shared->parent, size) < 0)
+        size_t new_size = size;
+
+        if (dt->shared->type == H5T_COMPLEX) {
+            if (!dt->shared->u.complex.homogeneous)
+                HGOTO_ERROR(H5E_DATATYPE, H5E_BADTYPE, FAIL,
+                            "heterogeneous complex number datatypes are currently unsupported");
+
+            if ((new_size % 2) != 0)
+                HGOTO_ERROR(H5E_DATATYPE, H5E_BADVALUE, FAIL,
+                            "new datatype size is not evenly divisible by 2");
+
+            new_size /= 2;
+        }
+
+        if (H5T__set_size(dt->shared->parent, new_size) < 0)
             HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, "unable to set size for parent data type");
 
         /* Adjust size of datatype appropriately */
         if (dt->shared->type == H5T_ARRAY)
             dt->shared->size = dt->shared->parent->shared->size * dt->shared->u.array.nelem;
+        else if (dt->shared->type == H5T_COMPLEX)
+            dt->shared->size = 2 * dt->shared->parent->shared->size;
         else if (dt->shared->type != H5T_VLEN)
             dt->shared->size = dt->shared->parent->shared->size;
     }
@@ -4422,6 +4476,7 @@ H5T__set_size(H5T_t *dt, size_t size)
             case H5T_VLEN:
             case H5T_ARRAY:
             case H5T_REFERENCE:
+            case H5T_COMPLEX:
                 assert("can't happen" && 0);
                 break;
 
@@ -4810,6 +4865,38 @@ H5T_cmp(const H5T_t *dt1, const H5T_t *dt2, bool superset)
                 HGOTO_DONE(1);
             break;
 
+        case H5T_COMPLEX:
+            /* Make sure the complex number datatypes are both homogeneous or
+             * both heterogeneous
+             */
+            tmp = (dt1->shared->u.complex.homogeneous > dt2->shared->u.complex.homogeneous) -
+                  (dt1->shared->u.complex.homogeneous < dt2->shared->u.complex.homogeneous);
+            if (tmp < 0)
+                HGOTO_DONE(-1);
+            if (tmp > 0)
+                HGOTO_DONE(1);
+
+            /* Make sure the complex number datatypes are both in the same form */
+            tmp = (dt1->shared->u.complex.form > dt2->shared->u.complex.form) -
+                  (dt1->shared->u.complex.form < dt2->shared->u.complex.form);
+            if (tmp < 0)
+                HGOTO_DONE(-1);
+            if (tmp > 0)
+                HGOTO_DONE(1);
+
+            if (dt1->shared->u.complex.homogeneous) {
+                tmp = H5T_cmp(dt1->shared->parent, dt2->shared->parent, superset);
+                if (tmp < 0)
+                    HGOTO_DONE(-1);
+                if (tmp > 0)
+                    HGOTO_DONE(1);
+            }
+            else
+                /* Heterogeneous complex number datatypes are currently unsupported */
+                HGOTO_DONE(-1);
+
+            break;
+
         case H5T_NO_CLASS:
         case H5T_INTEGER:
         case H5T_FLOAT:
@@ -4940,6 +5027,7 @@ H5T_cmp(const H5T_t *dt1, const H5T_t *dt2, bool superset)
                 case H5T_ENUM:
                 case H5T_VLEN:
                 case H5T_ARRAY:
+                case H5T_COMPLEX:
                 case H5T_NCLASSES:
                 default:
                     assert("not implemented yet" && 0);
@@ -5640,6 +5728,7 @@ H5T_path_match_find_type_with_volobj(const H5T_t *datatype, const H5VL_object_t 
             case H5T_OPAQUE:
             case H5T_REFERENCE: /* Should have been determined by above check */
             case H5T_ENUM:
+            case H5T_COMPLEX:
             case H5T_NO_CLASS: /* Error value, but simplify logic for a true/false return value */
             case H5T_NCLASSES: /* Error value, but simplify logic for a true/false return value */
             default:
@@ -6187,6 +6276,7 @@ H5T_is_sensible(const H5T_t *dt)
         case H5T_REFERENCE:
         case H5T_VLEN:
         case H5T_ARRAY:
+        case H5T_COMPLEX:
         case H5T_NCLASSES:
         default:
             /* Assume all other datatype are sensible to store on disk */
@@ -6239,7 +6329,7 @@ H5T_set_loc(H5T_t *dt, H5VL_object_t *file, H5T_loc_t loc)
                 /* Recurse if it's VL, compound, enum or array */
                 /* (If the force_conv flag is _not_ set, the type cannot change in size, so don't recurse) */
                 if (dt->shared->parent->shared->force_conv &&
-                    H5T_IS_COMPLEX(dt->shared->parent->shared->type)) {
+                    H5T_IS_COMPOSITE(dt->shared->parent->shared->type)) {
                     /* Keep the old base element size for later */
                     old_size = dt->shared->parent->shared->size;
 
@@ -6280,7 +6370,7 @@ H5T_set_loc(H5T_t *dt, H5VL_object_t *file, H5T_loc_t loc)
                     /* Recurse if it's VL, compound, enum or array */
                     /* (If the force_conv flag is _not_ set, the type cannot change in size, so don't recurse)
                      */
-                    if (memb_type->shared->force_conv && H5T_IS_COMPLEX(memb_type->shared->type)) {
+                    if (memb_type->shared->force_conv && H5T_IS_COMPOSITE(memb_type->shared->type)) {
                         /* Keep the old field size for later */
                         old_size = memb_type->shared->size;
 
@@ -6322,7 +6412,7 @@ H5T_set_loc(H5T_t *dt, H5VL_object_t *file, H5T_loc_t loc)
                  * them as part of the same blob)*/
                 /* (If the force_conv flag is _not_ set, the type cannot change in size, so don't recurse) */
                 if (dt->shared->parent->shared->force_conv &&
-                    H5T_IS_COMPLEX(dt->shared->parent->shared->type) &&
+                    H5T_IS_COMPOSITE(dt->shared->parent->shared->type) &&
                     (dt->shared->parent->shared->type != H5T_REFERENCE)) {
                     if ((changed = H5T_set_loc(dt->shared->parent, file, loc)) < 0)
                         HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, "Unable to set VL location");
@@ -6351,6 +6441,7 @@ H5T_set_loc(H5T_t *dt, H5VL_object_t *file, H5T_loc_t loc)
             case H5T_BITFIELD:
             case H5T_OPAQUE:
             case H5T_ENUM:
+            case H5T_COMPLEX:
             case H5T_NCLASSES:
             default:
                 break;
@@ -6446,6 +6537,7 @@ H5T__detect_vlen_ref(const H5T_t *dt)
         case H5T_BITFIELD:
         case H5T_OPAQUE:
         case H5T_REFERENCE:
+        case H5T_COMPLEX:
         case H5T_NCLASSES:
         default:
             break;
@@ -6538,6 +6630,7 @@ H5T__upgrade_version_cb(H5T_t *dt, void *op_value)
         case H5T_BITFIELD:
         case H5T_OPAQUE:
         case H5T_REFERENCE:
+        case H5T_COMPLEX:
         case H5T_NCLASSES:
         default:
             break;
@@ -6568,7 +6661,7 @@ H5T__upgrade_version(H5T_t *dt, unsigned new_version)
     assert(dt);
 
     /* Iterate over entire datatype, upgrading the version of components, if it's useful */
-    if (H5T__visit(dt, (H5T_VISIT_SIMPLE | H5T_VISIT_COMPLEX_LAST), H5T__upgrade_version_cb, &new_version) <
+    if (H5T__visit(dt, (H5T_VISIT_SIMPLE | H5T_VISIT_COMPOSITE_LAST), H5T__upgrade_version_cb, &new_version) <
         0)
         HGOTO_ERROR(H5E_DATATYPE, H5E_BADITER, FAIL, "iteration to upgrade datatype encoding version failed");
 

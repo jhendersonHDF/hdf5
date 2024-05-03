@@ -176,6 +176,8 @@ doprint(hid_t did, const hsize_t *start, const hsize_t *block, int rank)
     snprintf(fmt_double, sizeof(fmt_double), "%%1.%dg", DBL_DIG);
     info.fmt_double = fmt_double;
 
+    /* TODO: set complex number format here */
+
     info.dset_format     = "DSET-%s ";
     info.dset_hidefileno = 0;
 

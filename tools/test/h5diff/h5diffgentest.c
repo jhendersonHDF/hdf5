@@ -1962,7 +1962,7 @@ out:
  * Purpose: Check all HDF5 classes
  * H5T_INTEGER, H5T_FLOAT
  * H5T_TIME, H5T_STRING, H5T_BITFIELD, H5T_OPAQUE, H5T_COMPOUND, H5T_REFERENCE,
- * H5T_ENUM, H5T_VLEN, H5T_ARRAY
+ * H5T_ENUM, H5T_VLEN, H5T_ARRAY, H5T_COMPLEX
  *
  *-------------------------------------------------------------------------
  */
@@ -1999,7 +1999,7 @@ test_datasets(const char *file, int make_diffs /* flag to modify data buffers */
      *-------------------------------------------------------------------------
      */
 
-    write_dset_in(gid, "/dset", fid, make_diffs);
+    write_dset_in(gid, "/dset", fid, make_diffs); /* TODO: add complex number type */
 
     /* close */
     status = H5Dclose(did);

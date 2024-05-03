@@ -1583,6 +1583,14 @@ test_array_vlen_array(void)
 
 } /* end test_array_vlen_array() */
 
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+static void
+test_array_complex(void)
+{
+    /* TODO */
+}
+#endif
+
 /*-------------------------------------------------------------------------
  * Function:    test_array_bkg
  *

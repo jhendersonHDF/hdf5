@@ -19,6 +19,10 @@
 #include "h5dump_extern.h"
 #include "h5dump_xml.h"
 
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+#include <complex.h>
+#endif
+
 const char *xmlnsprefix = "hdf5:";
 
 /*
@@ -36,19 +40,22 @@ const char *xmlnsprefix = "hdf5:";
 static h5tool_format_t xml_dataformat = {
     0, /*raw */
 
-    "",     /*fmt_raw */
-    "%d",   /*fmt_int */
-    "%u",   /*fmt_uint */
-    "%hhd", /*fmt_schar */
-    "%u",   /*fmt_uchar */
-    "%d",   /*fmt_short */
-    "%u",   /*fmt_ushort */
-    "%ld",  /*fmt_long */
-    "%lu",  /*fmt_ulong */
-    NULL,   /*fmt_llong */
-    NULL,   /*fmt_ullong */
-    "%g",   /*fmt_double */
-    "%g",   /*fmt_float */
+    "",         /*fmt_raw */
+    "%d",       /*fmt_int */
+    "%u",       /*fmt_uint */
+    "%hhd",     /*fmt_schar */
+    "%u",       /*fmt_uchar */
+    "%d",       /*fmt_short */
+    "%u",       /*fmt_ushort */
+    "%ld",      /*fmt_long */
+    "%lu",      /*fmt_ulong */
+    NULL,       /*fmt_llong */
+    NULL,       /*fmt_ullong */
+    "%g",       /*fmt_double */
+    "%g",       /*fmt_float */
+    "%g%+gi",   /*fmt_float_complex */
+    "%g%+gi",   /*fmt_double_complex */
+    "%Lg%+Lgi", /*fmt_ldouble_complex */
 
     0, /*ascii */
     0, /*str_locale */
@@ -152,6 +159,8 @@ xml_dump_all_cb(hid_t group, const char *name, const H5L_info2_t *linfo, void H5
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -886,6 +895,8 @@ xml_print_datatype(hid_t type, unsigned in_group)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -1533,6 +1544,56 @@ xml_print_datatype(hid_t type, unsigned in_group)
                 H5Tclose(super);
                 break;
 
+            case H5T_COMPLEX:
+                /* Get complex number datatype's base type */
+                super = H5Tget_super(type);
+
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "<%sComplexNumberType>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                dump_indent += COL;
+                ctx.indent_level++;
+
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "<%sDataType>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                /* Print the base datatype */
+                dump_indent += COL;
+                ctx.indent_level++;
+                xml_print_datatype(super, 0);
+                dump_indent -= COL;
+                ctx.indent_level--;
+
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "</%sDataType>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                dump_indent -= COL;
+                ctx.indent_level--;
+
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "</%sComplexNumberType>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                /* Close base type */
+                H5Tclose(super);
+
+                break;
+
             case H5T_NO_CLASS:
             case H5T_NCLASSES:
             default:
@@ -1582,6 +1643,8 @@ xml_dump_datatype(hid_t type)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -1716,6 +1779,8 @@ xml_dump_dataspace(hid_t space)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -1890,6 +1955,8 @@ xml_dump_data(hid_t obj_id, int obj_data, struct subset_t H5_ATTR_UNUSED *sset, 
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -2057,6 +2124,8 @@ xml_dump_attr(hid_t attr, const char *attr_name, const H5A_info_t H5_ATTR_UNUSED
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -2096,6 +2165,7 @@ xml_dump_attr(hid_t attr, const char *attr_name, const H5A_info_t H5_ATTR_UNUSED
                 case H5T_OPAQUE:
                 case H5T_ENUM:
                 case H5T_ARRAY:
+                case H5T_COMPLEX:
                     dump_function_table->dump_data_function(attr_id, ATTRIBUTE_DATA, NULL, 0);
                     break;
 
@@ -2388,6 +2458,8 @@ xml_dump_named_datatype(hid_t type, const char *name)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -2606,6 +2678,8 @@ xml_dump_group(hid_t gid, const char *name)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -3011,6 +3085,8 @@ xml_print_refs(hid_t did, int source)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -3167,6 +3243,8 @@ xml_print_strs(hid_t did, int source)
         string_dataformat.fmt_float  = fp_format;
     }
 
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
+
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
         string_dataformat.line_per_line = 1;
@@ -3281,6 +3359,8 @@ check_filters(hid_t dcpl)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -3422,6 +3502,8 @@ xml_dump_fill_value(hid_t dcpl, hid_t type)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -3697,6 +3779,78 @@ xml_dump_fill_value(hid_t dcpl, hid_t type)
                 h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
                                        (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
                 break;
+            case H5T_COMPLEX:
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "<%sDataFromFile>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                ctx.need_prefix = true;
+                h5tools_simple_prefix(rawoutstream, outputformat, &ctx, (hsize_t)0, 0);
+
+#ifdef H5_HAVE_COMPLEX_NUMBERS
+                if (H5Tequal(type, H5T_NATIVE_FLOAT_COMPLEX) == true) {
+                    float _Complex fc;
+                    float real, imag;
+
+                    memcpy(&fc, buf, sizeof(float _Complex));
+
+                    real = crealf(fc);
+                    imag = cimagf(fc);
+
+                    /* Render the element */
+                    h5tools_str_reset(&buffer);
+                    h5tools_str_append(&buffer, "\"%f%+fi\"", (double)real, (double)imag);
+                    h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                           (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+                }
+                else if (H5Tequal(type, H5T_NATIVE_DOUBLE_COMPLEX) == true) {
+                    double _Complex dc;
+                    double real, imag;
+
+                    memcpy(&dc, buf, sizeof(double _Complex));
+
+                    real = creal(dc);
+                    imag = cimag(dc);
+
+                    /* Render the element */
+                    h5tools_str_reset(&buffer);
+                    h5tools_str_append(&buffer, "\"%f%+fi\"", real, imag);
+                    h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                           (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+                }
+                else if (H5Tequal(type, H5T_NATIVE_LDOUBLE_COMPLEX) == true) {
+                    long double _Complex ldc;
+                    long double real, imag;
+
+                    memcpy(&ldc, buf, sizeof(long double _Complex));
+
+                    real = creall(ldc);
+                    imag = cimagl(ldc);
+
+                    /* Render the element */
+                    h5tools_str_reset(&buffer);
+                    h5tools_str_append(&buffer, "\"%Lf%+Lfi\"", real, imag);
+                    h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                           (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+                }
+                else
+#endif
+                {
+                    /* TODO */
+                }
+
+                /* Render the element */
+                ctx.need_prefix = true;
+                h5tools_str_reset(&buffer);
+                h5tools_str_append(&buffer, "</%sDataFromFile>", xmlnsprefix);
+                h5tools_render_element(rawoutstream, outputformat, &ctx, &buffer, &curr_pos,
+                                       (size_t)outputformat->line_ncols, (hsize_t)0, (hsize_t)0);
+
+                break;
+
             case H5T_NO_CLASS:
             case H5T_NCLASSES:
             case H5T_STRING:
@@ -3803,6 +3957,8 @@ xml_dump_dataset(hid_t did, const char *name, struct subset_t H5_ATTR_UNUSED *ss
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;
@@ -4132,6 +4288,7 @@ xml_dump_dataset(hid_t did, const char *name, struct subset_t H5_ATTR_UNUSED *ss
             case H5T_OPAQUE:
             case H5T_ENUM:
             case H5T_ARRAY:
+            case H5T_COMPLEX:
                 ctx.indent_level++;
                 dump_indent += COL;
                 dump_function_table->dump_data_function(did, DATASET_DATA, NULL, 0);
@@ -4390,6 +4547,8 @@ xml_print_enum(hid_t type)
         string_dataformat.fmt_double = fp_format;
         string_dataformat.fmt_float  = fp_format;
     }
+
+    /* TODO: check where fp_format is set and see if complex number formats need to be adjusted */
 
     if (h5tools_nCols == 0) {
         string_dataformat.line_ncols    = 65535;

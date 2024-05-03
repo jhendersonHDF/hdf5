@@ -94,6 +94,7 @@ $SRC_H5DUMP_TESTFILES/tarray3.h5
 $SRC_H5DUMP_TESTFILES/tarray6.h5
 $SRC_H5DUMP_TESTFILES/tarray7.h5
 $SRC_H5DUMP_TESTFILES/tattr.h5
+$SRC_H5DUMP_TESTFILES/tcomplex.h5
 $SRC_H5DUMP_TESTFILES/tcompound.h5
 $SRC_H5DUMP_TESTFILES/tcompound_complex.h5
 $SRC_H5DUMP_TESTFILES/tdatareg.h5
@@ -134,6 +135,7 @@ $SRC_H5DUMP_OUTFILES/xml/tarray7.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tattr.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tbitfields_be.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tbitfields_le.h5.xml
+$SRC_H5DUMP_OUTFILES/xml/tcomplex.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tcompound_complex.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tcompound.h5.xml
 $SRC_H5DUMP_OUTFILES/xml/tcompound2.h5.xml
@@ -316,6 +318,7 @@ TOOLTEST tbitfields_le.h5.xml --xml tbitfields.h5
 else
 TOOLTEST tbitfields_be.h5.xml --xml tbitfields.h5
 fi
+TOOLTEST tcomplex.h5.xml --xml tcomplex.h5
 TOOLTEST tcompound.h5.xml --xml tcompound.h5
 TOOLTEST tcompound2.h5.xml --xml tcompound2.h5
 TOOLTEST tdatareg.h5.xml --xml tdatareg.h5

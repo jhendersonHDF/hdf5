@@ -51,6 +51,7 @@
       tarray6.h5
       tarray7.h5
       tattr.h5
+      tcomplex.h5
       tcompound.h5
       tcompound_complex.h5
       tdatareg.h5
@@ -90,6 +91,7 @@
       tattr.h5.xml
       tbitfields_be.h5.xml
       tbitfields_le.h5.xml
+      tcomplex.h5.xml
       tcompound_complex.h5.xml
       tcompound.h5.xml
       tcompound2.h5.xml
@@ -301,6 +303,9 @@
   # Add tests for _Float16 type
   ADD_XML_H5_TEST (tfloat16.h5 0 tfloat16.h5)
   ADD_XML_H5_TEST (tfloat16_be.h5 0 tfloat16_be.h5)
+
+  # Add tests for complex numbers
+  ADD_XML_H5_TEST (tcomplex.h5 0 tcomplex.h5)
 
   # tests for floating point user defined printf format
   ADD_XML_H5_TEST (tfpformat.h5 0 -u -m %.7f tfpformat.h5)

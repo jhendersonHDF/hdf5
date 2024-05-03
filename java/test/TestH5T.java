@@ -171,6 +171,8 @@ public class TestH5T {
         }
     }
 
+    /* TODO: add complex number support */
+
     @Test
     public void testH5Tget_array_ndims()
     {
