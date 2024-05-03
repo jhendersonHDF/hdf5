@@ -817,6 +817,29 @@ macro (H5ConversionTests TEST def msg)
 endmacro ()
 
 #-----------------------------------------------------------------------------
+# Check for complex number support
+#-----------------------------------------------------------------------------
+message (STATUS "Checking if complex number support is available")
+HDF_CHECK_TYPE_SIZE ("float _Complex" ${HDF_PREFIX}_SIZEOF_FLOAT_COMPLEX)
+HDF_CHECK_TYPE_SIZE ("double _Complex" ${HDF_PREFIX}_SIZEOF_DOUBLE_COMPLEX)
+HDF_CHECK_TYPE_SIZE ("long double _Complex" ${HDF_PREFIX}_SIZEOF_LONG_DOUBLE_COMPLEX)
+
+if (${HDF_PREFIX}_SIZEOF_FLOAT_COMPLEX AND ${HDF_PREFIX}_SIZEOF_DOUBLE_COMPLEX AND
+    ${HDF_PREFIX}_SIZEOF_LONG_DOUBLE_COMPLEX)
+  # Check if __STDC_NO_COMPLEX__ macro is defined, in which case complex number
+  # support is not available
+  HDF_FUNCTION_TEST (HAVE_STDC_NO_COMPLEX)
+
+  if (NOT H5_HAVE_STDC_NO_COMPLEX)
+    set (${HDF_PREFIX}_HAVE_COMPLEX_NUMBERS 1)
+  else ()
+    message (STATUS "Complex number support has been disabled since __STDC_NO_COMPLEX__ is defined")
+  endif ()
+else ()
+  message (STATUS "Complex number support has been disabled since the C types were not found")
+endif ()
+
+#-----------------------------------------------------------------------------
 # Check various conversion capabilities
 #-----------------------------------------------------------------------------
 

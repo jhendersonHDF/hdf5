@@ -28,6 +28,8 @@
       tarray1.h5
       tattr2.h5
       tattrreg.h5
+      tcomplex.h5
+      tcomplex_be.h5
       tcompound.h5
       tdatareg.h5
       tdset.h5
@@ -63,6 +65,8 @@
       tattrreg_le.ls
       tattrreg_be.ls
       tcomp-1.ls
+      tcomplex.ls
+      tcomplex_be.ls
       tdataregbe.ls
       tdataregle.ls
       tdset-1.ls
@@ -339,6 +343,10 @@
     ADD_H5_TEST (tfloat16_nosupport 0 -w80 -v tfloat16.h5)
     ADD_H5_TEST (tfloat16_be_nosupport 0 -w80 -v tfloat16_be.h5)
   endif ()
+
+  # tests for complex numbers
+  ADD_H5_TEST (tcomplex 0 -w80 -v tcomplex.h5)
+  ADD_H5_TEST (tcomplex_be 0 -w80 -v tcomplex_be.h5)
 
 # test for wildcards in filename (does not work with cmake)
 #  ADD_H5_TEST (tstarfile 0 -w80 t*link.h5)

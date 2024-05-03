@@ -2278,7 +2278,7 @@ make_all_objects(hid_t loc_id)
 
     if ((rid = H5Gopen2(loc_id, "/", H5P_DEFAULT)) < 0)
         goto out;
-    if (write_dset_in(rid, "dset_referenced", loc_id, 0) < 0)
+    if (write_dset_in(rid, "dset_referenced", loc_id, 0) < 0) /* TODO: add complex number type */
         goto out;
     if (H5Gclose(rid) < 0)
         goto out;

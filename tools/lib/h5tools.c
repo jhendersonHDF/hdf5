@@ -1995,6 +1995,10 @@ render_bin_output(FILE *stream, hid_t container, hid_t tid, void *_mem, hsize_t 
             }
         } break;
 
+        case H5T_COMPLEX:
+            /* TODO */
+            break;
+
         case H5T_TIME:
         case H5T_OPAQUE:
             H5TOOLS_DEBUG("H5T_OPAQUE");

@@ -7115,6 +7115,7 @@ test_libver_bounds_datatype(hid_t fapl)
 {
     hid_t tid = H5I_INVALID_HID, tid_enum = H5I_INVALID_HID, tid_array = H5I_INVALID_HID; /* Datatype IDs */
     hid_t tid_compound = H5I_INVALID_HID, tid_vlen = H5I_INVALID_HID;                     /* Datatype IDs */
+    hid_t tid_complex = H5I_INVALID_HID;                                                  /* Datatype IDs */
     int   enum_value;   /* Value for enum datatype */
     typedef struct s1 { /* Data structure for compound datatype */
         char c;
@@ -7159,6 +7160,12 @@ test_libver_bounds_datatype(hid_t fapl)
     /* Verify datatype message version */
     test_libver_bounds_datatype_check(fapl, tid_vlen);
 
+    /* Create complex number datatype */
+    tid_complex = H5Tcomplex_create(H5T_NATIVE_FLOAT);
+
+    /* Verify datatype message version */
+    test_libver_bounds_datatype_check(fapl, tid_complex);
+
     /* Close the datatypes */
     ret = H5Tclose(tid);
     CHECK(ret, FAIL, "H5Tclose");
@@ -7173,6 +7180,9 @@ test_libver_bounds_datatype(hid_t fapl)
     CHECK(ret, FAIL, "H5Tclose");
 
     ret = H5Tclose(tid_vlen);
+    CHECK(ret, FAIL, "H5Tclose");
+
+    ret = H5Tclose(tid_complex);
     CHECK(ret, FAIL, "H5Tclose");
 
 } /* end test_libver_bounds_datatype() */
@@ -7261,7 +7271,8 @@ test_libver_bounds_datatype_check(hid_t fapl, hid_t tid)
     /* H5T_COMPOUND, H5T_ENUM, H5T_ARRAY:
      *  --the library will set version according to low_bound
      *  --H5T_ARRAY: the earliest version the library will set is 2
-     * H5T_INTEGER, H5T_FLOAT, H5T_TIME, H5T_STRING, H5T_BITFIELD, H5T_OPAQUE, H5T_REFERENCE:
+     * H5T_INTEGER, H5T_FLOAT, H5T_TIME, H5T_STRING, H5T_BITFIELD, H5T_OPAQUE,
+     * H5T_REFERENCE, H5T_COMPLEX:
      *  --the library will only use basic version
      */
 
@@ -7362,7 +7373,8 @@ test_libver_bounds_datatype_check(hid_t fapl, hid_t tid)
                     /* H5T_COMPOUND, H5T_ENUM, H5T_ARRAY:
                      *  --the library will set version according to low_bound
                      *  --H5T_ARRAY: the earliest version the library will set is 2
-                     * H5T_INTEGER, H5T_FLOAT, H5T_TIME, H5T_STRING, H5T_BITFIELD, H5T_OPAQUE, H5T_REFERENCE:
+                     * H5T_INTEGER, H5T_FLOAT, H5T_TIME, H5T_STRING, H5T_BITFIELD, H5T_OPAQUE,
+                     * H5T_REFERENCE, H5T_COMPLEX:
                      *  --the library will only use basic version
                      */
                     if (dtype->shared->type == H5T_COMPOUND || dtype->shared->type == H5T_ENUM ||

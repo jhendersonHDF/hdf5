@@ -503,6 +503,13 @@ H5T__pack(const H5T_t *dt)
             /* Adjust size of datatype appropriately */
             if (dt->shared->type == H5T_ARRAY)
                 dt->shared->size = dt->shared->parent->shared->size * dt->shared->u.array.nelem;
+            else if (dt->shared->type == H5T_COMPLEX) {
+                if (dt->shared->u.cplx.homogeneous)
+                    dt->shared->size = 2 * dt->shared->parent->shared->size;
+                else
+                    HGOTO_ERROR(H5E_DATATYPE, H5E_BADTYPE, FAIL,
+                                "heterogeneous complex number datatypes are currently unsupported");
+            }
             else if (dt->shared->type != H5T_VLEN)
                 dt->shared->size = dt->shared->parent->shared->size;
         } /* end if */

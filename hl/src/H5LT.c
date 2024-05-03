@@ -2753,6 +2753,13 @@ next:
 
             break;
         }
+        case H5T_COMPLEX:
+            snprintf(dt_str, *slen, "H5T_COMPLEX {");
+
+            /* TODO */
+
+            break;
+
         case H5T_TIME:
             snprintf(dt_str, *slen, "H5T_TIME: not yet implemented");
             break;

@@ -1114,7 +1114,7 @@
  *       </td>
  *       <td>
  * The datatype class: #H5T_INTEGER, #H5T_FLOAT, #H5T_STRING, #H5T_BITFIELD, #H5T_OPAQUE, #H5T_COMPOUND,
- * #H5T_REFERENCE, #H5T_ENUM, #H5T_VLEN, #H5T_ARRAY
+ * #H5T_REFERENCE, #H5T_ENUM, #H5T_VLEN, #H5T_ARRAY, #H5T_COMPLEX
  *       </td>
  *     </tr>
  *     <tr>
@@ -2404,7 +2404,8 @@ filled according to the value of this property. The padding can be:
  * <li>#H5T_REFERENCE</li>
  * <li>#H5T_ENUM</li>
  * <li>#H5T_VLEN</li>
- * <li>#H5T_ARRAY</li></ul>
+ * <li>#H5T_ARRAY</li>
+ * <li>#H5T_COMPLEX</li></ul>
  * </li>
  * <li>If class is #H5T_COMPOUND, then go to step 2 and repeat all steps under step 3. If
  * class is not #H5T_COMPOUND, then a member is of an atomic class and can be read
@@ -3740,11 +3741,12 @@ filled according to the value of this property. The padding can be:
  * datatypes.
  *
  * The currently supported text format used by #H5LTtext_to_dtype and #H5LTdtype_to_text is the
- * data description language (DDL) and conforms to the \ref DDLBNF114. The portion of the
- * \ref DDLBNF114 that defines HDF5 datatypes appears below.
+ * data description language (DDL) and conforms to the \ref DDLBNF116. The portion of the
+ * \ref DDLBNF116 that defines HDF5 datatypes appears below.
  * <em>The definition of HDF5 datatypes from the HDF5 DDL</em>
  * \code
- *   <datatype> ::= <atomic_type> | <compound_type> | <variable_length_type> | <array_type>
+ *   <datatype> ::= <atomic_type> | <compound_type> | <variable_length_type> | <array_type> |
+ *                  <complex_type>
  *
  *   <atomic_type> ::= <integer> | <float> | <time> | <string> |
  *                     <bitfield> | <opaque> | <reference> | <enum>
@@ -3812,6 +3814,16 @@ filled according to the value of this property. The padding can be:
  *   <enum_def> ::= <enum_symbol> <enum_val>;
  *   <enum_symbol> ::= <identifier>
  *   <enum_val> ::= <int_value>
+ *   <complex_type> ::= H5T_COMPLEX { <complex_base_type> <complex_base_type> } |
+ *                      H5T_CPLX_IEEE_F16BE | H5T_CPLX_IEEE_F16LE |
+ *                      H5T_CPLX_IEEE_F32BE | H5T_CPLX_IEEE_F32LE |
+ *                      H5T_CPLX_IEEE_F64BE | H5T_CPLX_IEEE_F64LE |
+ *                      H5T_NATIVE_FLOAT_COMPLEX | H5T_NATIVE_DOUBLE_COMPLEX |
+ *                      H5T_NATIVE_LDOUBLE_COMPLEX
+ *   <complex_base_type> ::= <float>
+ *   // Currently complex number datatypes can only hold homogeneous floating-point
+ *   // type data, but they may be expanded in the future to hold heterogeneous
+ *   // floating-point type data or even non-floating-point type data
  * \endcode
  *
  * <em> Old definitions of the opaque and compound datatypes</em>
@@ -3920,6 +3932,14 @@ filled according to the value of this property. The padding can be:
  * \details The IEEE floating point types in big- and little-endian byte orders.
  * <div>
  * \snippet{doc} tables/predefinedDatatypes.dox predefined_ieee_datatypes_table
+ * </div>
+ *
+ * \defgroup PDTCPLX Complex Number Datatypes
+ * \ingroup PDT
+ * \details Complex number types consisting of 2 floating point values in big-
+ *          and little-endian byte orders.
+ * <div>
+ * \snippet{doc} tables/predefinedDatatypes.dox predefined_cplx_datatypes_table
  * </div>
  *
  * \defgroup PDTSTD Standard Datatypes
