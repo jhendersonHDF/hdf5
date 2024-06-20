@@ -3201,8 +3201,8 @@ test_complex(hid_t file)
     /* Initialize the data */
     for (size_t i = 0; i < DIM0; i++)
         for (size_t j = 0; j < DIM1; j++) {
-            float real = (float)(rand() / (double)RAND_MAX);
-            float imag = (float)(rand() / (double)RAND_MAX);
+            float real         = (float)(rand() / (double)RAND_MAX);
+            float imag         = (float)(rand() / (double)RAND_MAX);
             ipoints->arr[i][j] = (float _Complex)(real + (imag * _Complex_I));
         }
 
