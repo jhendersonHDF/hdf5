@@ -6777,6 +6777,7 @@ test_complex_type(void)
     hid_t       dcpl_id   = H5I_INVALID_HID;
     hid_t       base_type = H5I_INVALID_HID;
 #endif
+    htri_t is_little_endian;
     size_t type_size;
     hid_t  native_type   = H5I_INVALID_HID;
     hid_t  native_type2  = H5I_INVALID_HID;
@@ -7179,17 +7180,35 @@ test_complex_type(void)
      * complex number type created from the native form of the standard
      * floating-point type.
      */
-    if ((complex_type = H5Tcomplex_create(H5T_IEEE_F32LE)) < 0) {
-        H5_FAILED();
-        printf("Can't create complex number type from H5T_IEEE_F32LE type\n");
-        goto error;
-    }
+    is_little_endian = (H5Tget_order(H5T_NATIVE_FLOAT) == H5T_ORDER_LE);
 
-    /* Make sure this type matches predefined type */
-    if (0 == H5Tequal(complex_type, H5T_CPLX_IEEE_F32LE)) {
-        H5_FAILED();
-        printf("Derived complex number type didn't match predefined type\n");
-        goto error;
+    if (is_little_endian) {
+        if ((complex_type = H5Tcomplex_create(H5T_IEEE_F32LE)) < 0) {
+            H5_FAILED();
+            printf("Can't create complex number type from H5T_IEEE_F32LE type\n");
+            goto error;
+        }
+
+        /* Make sure this type matches predefined type */
+        if (0 == H5Tequal(complex_type, H5T_CPLX_IEEE_F32LE)) {
+            H5_FAILED();
+            printf("Derived complex number type didn't match predefined type\n");
+            goto error;
+        }
+    }
+    else {
+        if ((complex_type = H5Tcomplex_create(H5T_IEEE_F32BE)) < 0) {
+            H5_FAILED();
+            printf("Can't create complex number type from H5T_IEEE_F32BE type\n");
+            goto error;
+        }
+
+        /* Make sure this type matches predefined type */
+        if (0 == H5Tequal(complex_type, H5T_CPLX_IEEE_F32BE)) {
+            H5_FAILED();
+            printf("Derived complex number type didn't match predefined type\n");
+            goto error;
+        }
     }
 
     if ((native_type = H5Tget_native_type(complex_type, H5T_DIR_DEFAULT)) < 0) {
@@ -7198,15 +7217,24 @@ test_complex_type(void)
         goto error;
     }
 
-    if ((native_type2 = H5Tget_native_type(H5T_IEEE_F32LE, H5T_DIR_DEFAULT)) < 0) {
-        H5_FAILED();
-        printf("Can't get native type for H5T_IEEE_F32LE type\n");
-        goto error;
+    if (is_little_endian) {
+        if ((native_type2 = H5Tget_native_type(H5T_IEEE_F32LE, H5T_DIR_DEFAULT)) < 0) {
+            H5_FAILED();
+            printf("Can't get native type for H5T_IEEE_F32LE type\n");
+            goto error;
+        }
+    }
+    else {
+        if ((native_type2 = H5Tget_native_type(H5T_IEEE_F32BE, H5T_DIR_DEFAULT)) < 0) {
+            H5_FAILED();
+            printf("Can't get native type for H5T_IEEE_F32BE type\n");
+            goto error;
+        }
     }
 
     if ((complex_type2 = H5Tcomplex_create(native_type2)) < 0) {
         H5_FAILED();
-        printf("Can't create complex number type from native H5T_IEEE_F32LE type\n");
+        printf("Can't create complex number type from native type\n");
         goto error;
     }
 
