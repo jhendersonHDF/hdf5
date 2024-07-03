@@ -819,8 +819,16 @@ padding:
          * complex value.
          */
         if (H5T_ORDER_BE == dst_atomic.order && reverse) {
-            for (size_t i = 0; i < dst_p->shared->size / 2; i++)
-                H5_SWAP_BYTES(d, i, dst_p->shared->size - (i + 1));
+            size_t half_size = dst_p->shared->size / 2;
+
+            if (H5T_FLOAT == dst_p->shared->type) {
+                for (size_t i = 0; i < half_size; i++)
+                    H5_SWAP_BYTES(d, i, dst_p->shared->size - (i + 1));
+            }
+            else {
+                for (size_t i = 0; i < half_size / 2; i++)
+                    H5_SWAP_BYTES(d, i, half_size - (i + 1));
+            }
         }
         else if (H5T_ORDER_VAX == dst_atomic.order && reverse) {
             if (H5T_FLOAT == dst_p->shared->type) {
