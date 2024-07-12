@@ -31,7 +31,7 @@ static void test_flush_group(void);
 static void test_flush_group_invalid_params(void);
 static void test_refresh_group(void);
 static void test_refresh_group_invalid_params(void);
-static int create_group_recursive(hid_t parent_gid, unsigned counter);
+static int  create_group_recursive(hid_t parent_gid, unsigned counter);
 
 static void
 print_group_test_header(void)
@@ -2376,22 +2376,36 @@ H5_api_group_test_add(void)
     /* Add a fake test to print out a header to distinguish different test interfaces */
     AddTest("print_group_test_header", print_group_test_header, NULL, "Prints header for group tests", NULL);
 
-    AddTest("test_create_group_under_root", test_create_group_under_root, NULL, "creation of group under the root group", NULL);
-    AddTest("test_create_group_under_existing_group", test_create_group_under_existing_group, NULL, "creation of group under existing group using a relative path", NULL);
+    AddTest("test_create_group_under_root", test_create_group_under_root, NULL,
+            "creation of group under the root group", NULL);
+    AddTest("test_create_group_under_existing_group", test_create_group_under_existing_group, NULL,
+            "creation of group under existing group using a relative path", NULL);
     AddTest("test_create_many_groups", test_create_many_groups, NULL, "H5Gcreate many groups", NULL);
-    AddTest("test_create_deep_groups", test_create_deep_groups, NULL, "H5Gcreate groups of great depths", NULL);
-    AddTest("test_create_intermediate_group", test_create_intermediate_group, NULL, "H5Gcreate group with intermediate group creation", NULL);
-    AddTest("test_create_group_invalid_params", test_create_group_invalid_params, NULL, "H5Gcreate with invalid parameters", NULL);
-    AddTest("test_create_anonymous_group", test_create_anonymous_group, NULL, "creation of anonymous group", NULL);
-    AddTest("test_create_anonymous_group_invalid_params", test_create_anonymous_group_invalid_params, NULL, "H5Gcreate_anon with invalid parameters", NULL);
-    AddTest("test_open_nonexistent_group", test_open_nonexistent_group, NULL, "for invalid opening of a nonexistent group", NULL);
-    AddTest("test_open_group_invalid_params", test_open_group_invalid_params, NULL, "H5Gopen with invalid parameters", NULL);
-    AddTest("test_close_group_invalid_id", test_close_group_invalid_id, NULL, "H5Gclose with an invalid group ID", NULL);
-    AddTest("test_group_property_lists", test_group_property_lists, NULL, "group property list operations", NULL);
+    AddTest("test_create_deep_groups", test_create_deep_groups, NULL, "H5Gcreate groups of great depths",
+            NULL);
+    AddTest("test_create_intermediate_group", test_create_intermediate_group, NULL,
+            "H5Gcreate group with intermediate group creation", NULL);
+    AddTest("test_create_group_invalid_params", test_create_group_invalid_params, NULL,
+            "H5Gcreate with invalid parameters", NULL);
+    AddTest("test_create_anonymous_group", test_create_anonymous_group, NULL, "creation of anonymous group",
+            NULL);
+    AddTest("test_create_anonymous_group_invalid_params", test_create_anonymous_group_invalid_params, NULL,
+            "H5Gcreate_anon with invalid parameters", NULL);
+    AddTest("test_open_nonexistent_group", test_open_nonexistent_group, NULL,
+            "for invalid opening of a nonexistent group", NULL);
+    AddTest("test_open_group_invalid_params", test_open_group_invalid_params, NULL,
+            "H5Gopen with invalid parameters", NULL);
+    AddTest("test_close_group_invalid_id", test_close_group_invalid_id, NULL,
+            "H5Gclose with an invalid group ID", NULL);
+    AddTest("test_group_property_lists", test_group_property_lists, NULL, "group property list operations",
+            NULL);
     AddTest("test_get_group_info", test_get_group_info, NULL, "retrieval of group info", NULL);
-    AddTest("test_get_group_info_invalid_params", test_get_group_info_invalid_params, NULL, "retrieval of group info with invalid parameters", NULL);
+    AddTest("test_get_group_info_invalid_params", test_get_group_info_invalid_params, NULL,
+            "retrieval of group info with invalid parameters", NULL);
     AddTest("test_flush_group", test_flush_group, NULL, "H5Gflush", NULL);
-    AddTest("test_flush_group_invalid_params", test_flush_group_invalid_params, NULL, "H5Gflush with invalid parameters", NULL);
+    AddTest("test_flush_group_invalid_params", test_flush_group_invalid_params, NULL,
+            "H5Gflush with invalid parameters", NULL);
     AddTest("test_refresh_group", test_refresh_group, NULL, "H5Grefresh", NULL);
-    AddTest("test_refresh_group_invalid_params", test_refresh_group_invalid_params, NULL, "H5Grefresh with invalid parameters", NULL);
+    AddTest("test_refresh_group_invalid_params", test_refresh_group_invalid_params, NULL,
+            "H5Grefresh with invalid parameters", NULL);
 }

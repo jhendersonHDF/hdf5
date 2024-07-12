@@ -2528,20 +2528,29 @@ H5_api_file_test_add(void)
     AddTest("print_file_test_header", print_file_test_header, NULL, "Prints header for file tests", NULL);
 
     AddTest("test_create_file", test_create_file, NULL, "H5Fcreate", NULL);
-    AddTest("test_create_file_invalid_params", test_create_file_invalid_params, NULL, "H5Fcreate with invalid parameters", NULL);
-    AddTest("test_create_file_excl", test_create_file_excl, NULL, "H5Fcreate with H5F_ACC_EXCL/H5F_ACC_TRUNC flag", NULL);
+    AddTest("test_create_file_invalid_params", test_create_file_invalid_params, NULL,
+            "H5Fcreate with invalid parameters", NULL);
+    AddTest("test_create_file_excl", test_create_file_excl, NULL,
+            "H5Fcreate with H5F_ACC_EXCL/H5F_ACC_TRUNC flag", NULL);
     AddTest("test_open_file", test_open_file, NULL, "H5Fopen", NULL);
-    AddTest("test_open_file_invalid_params", test_open_file_invalid_params, NULL, "H5Fopen with invalid parameters", NULL);
-    AddTest("test_open_nonexistent_file", test_open_nonexistent_file, NULL, "for invalid opening of a non-existent file", NULL);
+    AddTest("test_open_file_invalid_params", test_open_file_invalid_params, NULL,
+            "H5Fopen with invalid parameters", NULL);
+    AddTest("test_open_nonexistent_file", test_open_nonexistent_file, NULL,
+            "for invalid opening of a non-existent file", NULL);
     AddTest("test_file_open_overlap", test_file_open_overlap, NULL, "overlapping file opens", NULL);
-    AddTest("test_file_permission", test_file_permission, NULL, "file permissions (invalid creation of objects in read-only file)", NULL);
+    AddTest("test_file_permission", test_file_permission, NULL,
+            "file permissions (invalid creation of objects in read-only file)", NULL);
     AddTest("test_reopen_file", test_reopen_file, NULL, "re-open of a file with H5Freopen", NULL);
-    AddTest("test_close_file_invalid_id", test_close_file_invalid_id, NULL, "H5Fclose with an invalid ID", NULL);
+    AddTest("test_close_file_invalid_id", test_close_file_invalid_id, NULL, "H5Fclose with an invalid ID",
+            NULL);
     AddTest("test_flush_file", test_flush_file, NULL, "H5Fflush", NULL);
     AddTest("test_file_is_accessible", test_file_is_accessible, NULL, "H5Fis_accessible", NULL);
-    AddTest("test_file_property_lists", test_file_property_lists, NULL, "file property list operations", NULL);
-    AddTest("test_get_file_intent", test_get_file_intent, NULL, "retrieval of file intent with H5Fget_intent", NULL);
-    AddTest("test_get_file_obj_count", test_get_file_obj_count, NULL, "retrieval of open object number and IDs", NULL);
+    AddTest("test_file_property_lists", test_file_property_lists, NULL, "file property list operations",
+            NULL);
+    AddTest("test_get_file_intent", test_get_file_intent, NULL, "retrieval of file intent with H5Fget_intent",
+            NULL);
+    AddTest("test_get_file_obj_count", test_get_file_obj_count, NULL,
+            "retrieval of open object number and IDs", NULL);
     AddTest("test_file_mounts", test_file_mounts, NULL, "file mounting/unmounting", NULL);
     AddTest("test_get_file_name", test_get_file_name, NULL, "retrieval of file name", NULL);
 }

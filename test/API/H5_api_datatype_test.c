@@ -2643,35 +2643,55 @@ void
 H5_api_datatype_test_add(void)
 {
     /* Add a fake test to print out a header to distinguish different test interfaces */
-    AddTest("print_datatype_test_header", print_datatype_test_header, NULL, "Prints header for datatype tests", NULL);
+    AddTest("print_datatype_test_header", print_datatype_test_header, NULL,
+            "Prints header for datatype tests", NULL);
 
-    AddTest("test_create_committed_datatype", test_create_committed_datatype, NULL, "creation of a committed datatype", NULL);
-    AddTest("test_create_committed_datatype_invalid_params", test_create_committed_datatype_invalid_params, NULL, "H5Tcommit2 with invalid parameters", NULL);
-    AddTest("test_create_anonymous_committed_datatype", test_create_anonymous_committed_datatype, NULL, "creation of anonymous committed datatype", NULL);
-    AddTest("test_create_anonymous_committed_datatype_invalid_params", test_create_anonymous_committed_datatype_invalid_params, NULL, "H5Tcommit_anon with invalid parameters", NULL);
+    AddTest("test_create_committed_datatype", test_create_committed_datatype, NULL,
+            "creation of a committed datatype", NULL);
+    AddTest("test_create_committed_datatype_invalid_params", test_create_committed_datatype_invalid_params,
+            NULL, "H5Tcommit2 with invalid parameters", NULL);
+    AddTest("test_create_anonymous_committed_datatype", test_create_anonymous_committed_datatype, NULL,
+            "creation of anonymous committed datatype", NULL);
+    AddTest("test_create_anonymous_committed_datatype_invalid_params",
+            test_create_anonymous_committed_datatype_invalid_params, NULL,
+            "H5Tcommit_anon with invalid parameters", NULL);
 
 #ifndef PROBLEMATIC_TESTS
-    AddTest("test_create_committed_datatype_empty_types", test_create_committed_datatype_empty_types, NULL, "creation of committed datatype with empty types", NULL);
+    AddTest("test_create_committed_datatype_empty_types", test_create_committed_datatype_empty_types, NULL,
+            "creation of committed datatype with empty types", NULL);
 #endif
 
-    AddTest("test_recommit_committed_type", test_recommit_committed_type, NULL, "inability to re-commit a committed datatype", NULL);
+    AddTest("test_recommit_committed_type", test_recommit_committed_type, NULL,
+            "inability to re-commit a committed datatype", NULL);
     AddTest("test_open_committed_datatype", test_open_committed_datatype, NULL, "H5Topen2", NULL);
-    AddTest("test_open_committed_datatype_invalid_params", test_open_committed_datatype_invalid_params, NULL, "H5Topen2 with invalid parameters", NULL);
-    AddTest("test_reopen_committed_datatype_indirect", test_reopen_committed_datatype_indirect, NULL, "reopening open committed datatypes using H5Dget_type", NULL);
-    AddTest("test_close_committed_datatype_invalid_id", test_close_committed_datatype_invalid_id, NULL, "H5Tclose with an invalid committed datatype ID", NULL);
-    AddTest("test_datatype_property_lists", test_datatype_property_lists, NULL, "datatype property list operations", NULL);
-    AddTest("test_create_dataset_with_committed_type", test_create_dataset_with_committed_type, NULL, "dataset creation with a committed datatype", NULL);
-    AddTest("test_create_attribute_with_committed_type", test_create_attribute_with_committed_type, NULL, "attribute creation with a committed datatype", NULL);
-    AddTest("test_delete_committed_type", test_delete_committed_type, NULL, "committed datatype deletion", NULL);
-    AddTest("test_resurrect_datatype", test_resurrect_datatype, NULL, "resurrecting datatype after deletion", NULL);
+    AddTest("test_open_committed_datatype_invalid_params", test_open_committed_datatype_invalid_params, NULL,
+            "H5Topen2 with invalid parameters", NULL);
+    AddTest("test_reopen_committed_datatype_indirect", test_reopen_committed_datatype_indirect, NULL,
+            "reopening open committed datatypes using H5Dget_type", NULL);
+    AddTest("test_close_committed_datatype_invalid_id", test_close_committed_datatype_invalid_id, NULL,
+            "H5Tclose with an invalid committed datatype ID", NULL);
+    AddTest("test_datatype_property_lists", test_datatype_property_lists, NULL,
+            "datatype property list operations", NULL);
+    AddTest("test_create_dataset_with_committed_type", test_create_dataset_with_committed_type, NULL,
+            "dataset creation with a committed datatype", NULL);
+    AddTest("test_create_attribute_with_committed_type", test_create_attribute_with_committed_type, NULL,
+            "attribute creation with a committed datatype", NULL);
+    AddTest("test_delete_committed_type", test_delete_committed_type, NULL, "committed datatype deletion",
+            NULL);
+    AddTest("test_resurrect_datatype", test_resurrect_datatype, NULL, "resurrecting datatype after deletion",
+            NULL);
     AddTest("test_flush_committed_datatype", test_flush_committed_datatype, NULL, "H5Tflush", NULL);
-    AddTest("test_flush_committed_datatype_invalid_params", test_flush_committed_datatype_invalid_params, NULL, "H5Tflush with invalid parameters", NULL);
+    AddTest("test_flush_committed_datatype_invalid_params", test_flush_committed_datatype_invalid_params,
+            NULL, "H5Tflush with invalid parameters", NULL);
     AddTest("test_refresh_committed_datatype", test_refresh_committed_datatype, NULL, "H5Trefresh", NULL);
-    AddTest("test_refresh_committed_datatype_invalid_params", test_refresh_committed_datatype_invalid_params, NULL, "H5Trefresh with invalid parameters", NULL);
+    AddTest("test_refresh_committed_datatype_invalid_params", test_refresh_committed_datatype_invalid_params,
+            NULL, "H5Trefresh with invalid parameters", NULL);
 
 #ifndef PROBLEMATIC_TESTS
-    AddTest("test_cant_commit_predefined", test_cant_commit_predefined, NULL, "inability to commit predefined types directly", NULL);
+    AddTest("test_cant_commit_predefined", test_cant_commit_predefined, NULL,
+            "inability to commit predefined types directly", NULL);
 #endif
 
-    AddTest("test_cant_modify_committed_type", test_cant_modify_committed_type, NULL, "inability to modify a committed datatype", NULL);
+    AddTest("test_cant_modify_committed_type", test_cant_modify_committed_type, NULL,
+            "inability to modify a committed datatype", NULL);
 }

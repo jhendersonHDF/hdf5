@@ -31,7 +31,8 @@ void
 H5_api_misc_test_parallel_add(void)
 {
     /* Add a fake test to print out a header to distinguish different test interfaces */
-    AddTest("print_misc_test_header", print_misc_test_header, NULL, "Prints header for miscellaneous tests", NULL);
+    AddTest("print_misc_test_header", print_misc_test_header, NULL, "Prints header for miscellaneous tests",
+            NULL);
 
     /* No tests yet */
 }

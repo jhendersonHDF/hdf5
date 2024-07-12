@@ -31,7 +31,8 @@ void
 H5_api_datatype_test_parallel_add(void)
 {
     /* Add a fake test to print out a header to distinguish different test interfaces */
-    AddTest("print_datatype_test_header", print_datatype_test_header, NULL, "Prints header for datatype tests", NULL);
+    AddTest("print_datatype_test_header", print_datatype_test_header, NULL,
+            "Prints header for datatype tests", NULL);
 
     /* No tests yet */
 }

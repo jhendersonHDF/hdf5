@@ -8082,30 +8082,57 @@ void
 H5_api_dataset_test_parallel_add(void)
 {
     /* Add a fake test to print out a header to distinguish different test interfaces */
-    AddTest("print_dataset_test_header", print_dataset_test_header, NULL, "Prints header for dataset tests", NULL);
+    AddTest("print_dataset_test_header", print_dataset_test_header, NULL, "Prints header for dataset tests",
+            NULL);
 
-    AddTest("test_write_dataset_data_verification", test_write_dataset_data_verification, NULL, "verification of dataset data using H5Dwrite then H5Dread", NULL);
-    AddTest("test_write_dataset_independent", test_write_dataset_independent, NULL, "independent writing to different datasets by different ranks", NULL);
-    AddTest("test_write_dataset_one_proc_0_selection", test_write_dataset_one_proc_0_selection, NULL, "write to dataset with one rank selecting 0 rows", NULL);
-    AddTest("test_write_dataset_one_proc_none_selection", test_write_dataset_one_proc_none_selection, NULL, "write to dataset with one rank using 'none' selection", NULL);
-    AddTest("test_write_dataset_one_proc_all_selection", test_write_dataset_one_proc_all_selection, NULL, "write to dataset with one rank using all selection; others none selection", NULL);
-    AddTest("test_write_dataset_hyper_file_all_mem", test_write_dataset_hyper_file_all_mem, NULL, "write to dataset with hyperslab sel. for file space; all sel. for memory", NULL);
-    AddTest("test_write_dataset_all_file_hyper_mem", test_write_dataset_all_file_hyper_mem, NULL, "write to dataset with all sel. for file space; hyperslab sel. for memory", NULL);
-    AddTest("test_write_dataset_point_file_all_mem", test_write_dataset_point_file_all_mem, NULL, "write to dataset with point sel. for file space; all sel. for memory", NULL);
-    AddTest("test_write_dataset_all_file_point_mem", test_write_dataset_all_file_point_mem, NULL, "write to dataset with all sel. for file space; point sel. for memory", NULL);
-    AddTest("test_write_dataset_hyper_file_point_mem", test_write_dataset_hyper_file_point_mem, NULL, "write to dataset with hyperslab sel. for file space; point sel. for memory", NULL);
-    AddTest("test_write_dataset_point_file_hyper_mem", test_write_dataset_point_file_hyper_mem, NULL, "write to dataset with point sel. for file space; hyperslab sel. for memory", NULL);
-    AddTest("test_read_dataset_one_proc_0_selection", test_read_dataset_one_proc_0_selection, NULL, "read from dataset with one rank selecting 0 rows", NULL);
-    AddTest("test_read_dataset_one_proc_none_selection", test_read_dataset_one_proc_none_selection, NULL, "read from dataset with one rank using 'none' selection", NULL);
-    AddTest("test_read_dataset_one_proc_all_selection", test_read_dataset_one_proc_all_selection, NULL, "read from dataset with one rank using all selection; others none selection", NULL);
-    AddTest("test_read_dataset_hyper_file_all_mem", test_read_dataset_hyper_file_all_mem, NULL, "read from dataset with hyperslab sel. for file space; all sel. for memory", NULL);
-    AddTest("test_read_dataset_all_file_hyper_mem", test_read_dataset_all_file_hyper_mem, NULL, "read from dataset with all sel. for file space; hyperslab sel. for memory", NULL);
-    AddTest("test_read_dataset_point_file_all_mem", test_read_dataset_point_file_all_mem, NULL, "read from dataset with point sel. for file space; all sel. for memory", NULL);
-    AddTest("test_read_dataset_all_file_point_mem", test_read_dataset_all_file_point_mem, NULL, "read from dataset with all sel. for file space; point sel. for memory", NULL);
-    AddTest("test_read_dataset_hyper_file_point_mem", test_read_dataset_hyper_file_point_mem, NULL, "read from dataset with hyperslab sel. for file space; point sel. for memory", NULL);
-    AddTest("test_read_dataset_point_file_hyper_mem", test_read_dataset_point_file_hyper_mem, NULL, "read from dataset with point sel. for file space; hyperslab sel. for memory", NULL);
-    AddTest("test_write_multi_chunk_dataset_same_shape_read", test_write_multi_chunk_dataset_same_shape_read, NULL, "write to dataset with multiple chunks using same shaped dataspaces", NULL);
-    AddTest("test_write_multi_chunk_dataset_diff_shape_read", test_write_multi_chunk_dataset_diff_shape_read, NULL, "write to dataset with multiple chunks using differently shaped dataspaces", NULL);
-    AddTest("test_overwrite_multi_chunk_dataset_same_shape_read", test_overwrite_multi_chunk_dataset_same_shape_read, NULL, "several overwrites to dataset with multiple chunks using same shaped dataspaces", NULL);
-    AddTest("test_overwrite_multi_chunk_dataset_diff_shape_read", test_overwrite_multi_chunk_dataset_diff_shape_read, NULL, "several overwrites to dataset with multiple chunks using differently shaped dataspaces", NULL);
+    AddTest("test_write_dataset_data_verification", test_write_dataset_data_verification, NULL,
+            "verification of dataset data using H5Dwrite then H5Dread", NULL);
+    AddTest("test_write_dataset_independent", test_write_dataset_independent, NULL,
+            "independent writing to different datasets by different ranks", NULL);
+    AddTest("test_write_dataset_one_proc_0_selection", test_write_dataset_one_proc_0_selection, NULL,
+            "write to dataset with one rank selecting 0 rows", NULL);
+    AddTest("test_write_dataset_one_proc_none_selection", test_write_dataset_one_proc_none_selection, NULL,
+            "write to dataset with one rank using 'none' selection", NULL);
+    AddTest("test_write_dataset_one_proc_all_selection", test_write_dataset_one_proc_all_selection, NULL,
+            "write to dataset with one rank using all selection; others none selection", NULL);
+    AddTest("test_write_dataset_hyper_file_all_mem", test_write_dataset_hyper_file_all_mem, NULL,
+            "write to dataset with hyperslab sel. for file space; all sel. for memory", NULL);
+    AddTest("test_write_dataset_all_file_hyper_mem", test_write_dataset_all_file_hyper_mem, NULL,
+            "write to dataset with all sel. for file space; hyperslab sel. for memory", NULL);
+    AddTest("test_write_dataset_point_file_all_mem", test_write_dataset_point_file_all_mem, NULL,
+            "write to dataset with point sel. for file space; all sel. for memory", NULL);
+    AddTest("test_write_dataset_all_file_point_mem", test_write_dataset_all_file_point_mem, NULL,
+            "write to dataset with all sel. for file space; point sel. for memory", NULL);
+    AddTest("test_write_dataset_hyper_file_point_mem", test_write_dataset_hyper_file_point_mem, NULL,
+            "write to dataset with hyperslab sel. for file space; point sel. for memory", NULL);
+    AddTest("test_write_dataset_point_file_hyper_mem", test_write_dataset_point_file_hyper_mem, NULL,
+            "write to dataset with point sel. for file space; hyperslab sel. for memory", NULL);
+    AddTest("test_read_dataset_one_proc_0_selection", test_read_dataset_one_proc_0_selection, NULL,
+            "read from dataset with one rank selecting 0 rows", NULL);
+    AddTest("test_read_dataset_one_proc_none_selection", test_read_dataset_one_proc_none_selection, NULL,
+            "read from dataset with one rank using 'none' selection", NULL);
+    AddTest("test_read_dataset_one_proc_all_selection", test_read_dataset_one_proc_all_selection, NULL,
+            "read from dataset with one rank using all selection; others none selection", NULL);
+    AddTest("test_read_dataset_hyper_file_all_mem", test_read_dataset_hyper_file_all_mem, NULL,
+            "read from dataset with hyperslab sel. for file space; all sel. for memory", NULL);
+    AddTest("test_read_dataset_all_file_hyper_mem", test_read_dataset_all_file_hyper_mem, NULL,
+            "read from dataset with all sel. for file space; hyperslab sel. for memory", NULL);
+    AddTest("test_read_dataset_point_file_all_mem", test_read_dataset_point_file_all_mem, NULL,
+            "read from dataset with point sel. for file space; all sel. for memory", NULL);
+    AddTest("test_read_dataset_all_file_point_mem", test_read_dataset_all_file_point_mem, NULL,
+            "read from dataset with all sel. for file space; point sel. for memory", NULL);
+    AddTest("test_read_dataset_hyper_file_point_mem", test_read_dataset_hyper_file_point_mem, NULL,
+            "read from dataset with hyperslab sel. for file space; point sel. for memory", NULL);
+    AddTest("test_read_dataset_point_file_hyper_mem", test_read_dataset_point_file_hyper_mem, NULL,
+            "read from dataset with point sel. for file space; hyperslab sel. for memory", NULL);
+    AddTest("test_write_multi_chunk_dataset_same_shape_read", test_write_multi_chunk_dataset_same_shape_read,
+            NULL, "write to dataset with multiple chunks using same shaped dataspaces", NULL);
+    AddTest("test_write_multi_chunk_dataset_diff_shape_read", test_write_multi_chunk_dataset_diff_shape_read,
+            NULL, "write to dataset with multiple chunks using differently shaped dataspaces", NULL);
+    AddTest("test_overwrite_multi_chunk_dataset_same_shape_read",
+            test_overwrite_multi_chunk_dataset_same_shape_read, NULL,
+            "several overwrites to dataset with multiple chunks using same shaped dataspaces", NULL);
+    AddTest("test_overwrite_multi_chunk_dataset_diff_shape_read",
+            test_overwrite_multi_chunk_dataset_diff_shape_read, NULL,
+            "several overwrites to dataset with multiple chunks using differently shaped dataspaces", NULL);
 }

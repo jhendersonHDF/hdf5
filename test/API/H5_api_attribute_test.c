@@ -11555,47 +11555,80 @@ void
 H5_api_attribute_test_add(void)
 {
     /* Add a fake test to print out a header to distinguish different test interfaces */
-    AddTest("print_attribute_test_header", print_attribute_test_header, NULL, "Prints header for attribute tests", NULL);
+    AddTest("print_attribute_test_header", print_attribute_test_header, NULL,
+            "Prints header for attribute tests", NULL);
 
-    AddTest("test_create_attribute_on_root", test_create_attribute_on_root, NULL, "attribute creation on the root group", NULL);
-    AddTest("test_create_attribute_on_dataset", test_create_attribute_on_dataset, NULL, "attribute creation on a dataset", NULL);
-    AddTest("test_create_attribute_on_datatype", test_create_attribute_on_datatype, NULL, "attribute creation on a committed datatype", NULL);
-    AddTest("test_create_attribute_with_null_space", test_create_attribute_with_null_space, NULL, "attribute creation with a NULL dataspace", NULL);
-    AddTest("test_create_attribute_with_scalar_space", test_create_attribute_with_scalar_space, NULL, "attribute creation with a SCALAR dataspace", NULL);
-    AddTest("test_create_attribute_with_space_in_name", test_create_attribute_with_space_in_name, NULL, "attribute creation with a space in attribute's name", NULL);
-    AddTest("test_create_attribute_invalid_params", test_create_attribute_invalid_params, NULL, "attribute creation with invalid parameters", NULL);
+    AddTest("test_create_attribute_on_root", test_create_attribute_on_root, NULL,
+            "attribute creation on the root group", NULL);
+    AddTest("test_create_attribute_on_dataset", test_create_attribute_on_dataset, NULL,
+            "attribute creation on a dataset", NULL);
+    AddTest("test_create_attribute_on_datatype", test_create_attribute_on_datatype, NULL,
+            "attribute creation on a committed datatype", NULL);
+    AddTest("test_create_attribute_with_null_space", test_create_attribute_with_null_space, NULL,
+            "attribute creation with a NULL dataspace", NULL);
+    AddTest("test_create_attribute_with_scalar_space", test_create_attribute_with_scalar_space, NULL,
+            "attribute creation with a SCALAR dataspace", NULL);
+    AddTest("test_create_attribute_with_space_in_name", test_create_attribute_with_space_in_name, NULL,
+            "attribute creation with a space in attribute's name", NULL);
+    AddTest("test_create_attribute_invalid_params", test_create_attribute_invalid_params, NULL,
+            "attribute creation with invalid parameters", NULL);
     AddTest("test_open_attribute", test_open_attribute, NULL, "attribute opening", NULL);
-    AddTest("test_open_attribute_invalid_params", test_open_attribute_invalid_params, NULL, "attribute opening with invalid parameters", NULL);
+    AddTest("test_open_attribute_invalid_params", test_open_attribute_invalid_params, NULL,
+            "attribute opening with invalid parameters", NULL);
     AddTest("test_write_attribute", test_write_attribute, NULL, "H5Awrite", NULL);
-    AddTest("test_write_attribute_invalid_params", test_write_attribute_invalid_params, NULL, "H5Awrite with invalid parameters", NULL);
+    AddTest("test_write_attribute_invalid_params", test_write_attribute_invalid_params, NULL,
+            "H5Awrite with invalid parameters", NULL);
     AddTest("test_read_attribute", test_read_attribute, NULL, "H5Aread", NULL);
-    AddTest("test_read_attribute_invalid_params", test_read_attribute_invalid_params, NULL, "H5Aread with invalid parameters", NULL);
+    AddTest("test_read_attribute_invalid_params", test_read_attribute_invalid_params, NULL,
+            "H5Aread with invalid parameters", NULL);
     AddTest("test_read_empty_attribute", test_read_empty_attribute, NULL, "reading an empty attribute", NULL);
-    AddTest("test_close_attribute_invalid_id", test_close_attribute_invalid_id, NULL, "H5Aclose with an invalid attribute ID", NULL);
-    AddTest("test_get_attribute_space_and_type", test_get_attribute_space_and_type, NULL, "retrieval of an attribute's dataspace and datatype", NULL);
-    AddTest("test_get_attribute_space_and_type_invalid_params", test_get_attribute_space_and_type_invalid_params, NULL, "H5Aget_type/H5Aget_space with invalid parameters", NULL);
-    AddTest("test_attribute_property_lists", test_attribute_property_lists, NULL, "attribute property list operations", NULL);
-    AddTest("test_get_attribute_name", test_get_attribute_name, NULL, "retrieval of an attribute's name", NULL);
-    AddTest("test_get_attribute_name_invalid_params", test_get_attribute_name_invalid_params, NULL, "retrieval of an attribute's name with invalid parameters", NULL);
-    AddTest("test_get_attribute_storage_size", test_get_attribute_storage_size, NULL, "H5Aget_storage_size", NULL);
+    AddTest("test_close_attribute_invalid_id", test_close_attribute_invalid_id, NULL,
+            "H5Aclose with an invalid attribute ID", NULL);
+    AddTest("test_get_attribute_space_and_type", test_get_attribute_space_and_type, NULL,
+            "retrieval of an attribute's dataspace and datatype", NULL);
+    AddTest("test_get_attribute_space_and_type_invalid_params",
+            test_get_attribute_space_and_type_invalid_params, NULL,
+            "H5Aget_type/H5Aget_space with invalid parameters", NULL);
+    AddTest("test_attribute_property_lists", test_attribute_property_lists, NULL,
+            "attribute property list operations", NULL);
+    AddTest("test_get_attribute_name", test_get_attribute_name, NULL, "retrieval of an attribute's name",
+            NULL);
+    AddTest("test_get_attribute_name_invalid_params", test_get_attribute_name_invalid_params, NULL,
+            "retrieval of an attribute's name with invalid parameters", NULL);
+    AddTest("test_get_attribute_storage_size", test_get_attribute_storage_size, NULL, "H5Aget_storage_size",
+            NULL);
     AddTest("test_get_attribute_info", test_get_attribute_info, NULL, "retrieval of attribute info", NULL);
-    AddTest("test_get_attribute_info_invalid_params", test_get_attribute_info_invalid_params, NULL, "retrieval of attribute info with invalid parameters", NULL);
+    AddTest("test_get_attribute_info_invalid_params", test_get_attribute_info_invalid_params, NULL,
+            "retrieval of attribute info with invalid parameters", NULL);
     AddTest("test_rename_attribute", test_rename_attribute, NULL, "attribute renaming", NULL);
-    AddTest("test_rename_attribute_invalid_params", test_rename_attribute_invalid_params, NULL, "attribute renaming with invalid parameters", NULL);
-    AddTest("test_attribute_iterate_group", test_attribute_iterate_group, NULL, "attribute iteration on a group", NULL);
-    AddTest("test_attribute_iterate_dataset", test_attribute_iterate_dataset, NULL, "attribute iteration on a dataset", NULL);
-    AddTest("test_attribute_iterate_datatype", test_attribute_iterate_datatype, NULL, "attribute iteration on a committed datatype", NULL);
-    AddTest("test_attribute_iterate_index_saving", test_attribute_iterate_index_saving, NULL, "attribute iteration index saving capability", NULL);
-    AddTest("test_attribute_iterate_invalid_params", test_attribute_iterate_invalid_params, NULL, "attribute iteration with invalid parameters", NULL);
-    AddTest("test_attribute_iterate_0_attributes", test_attribute_iterate_0_attributes, NULL, "attribute iteration on object with 0 attributes", NULL);
-    AddTest("test_attribute_compound_subset", test_attribute_compound_subset, NULL, "verification of attribute data using H5Awrite then H5Aread with compound type subsets", NULL);
-    AddTest("test_attribute_string_encodings", test_attribute_string_encodings, NULL, "string encoding read/write correctness on attributes", NULL);
+    AddTest("test_rename_attribute_invalid_params", test_rename_attribute_invalid_params, NULL,
+            "attribute renaming with invalid parameters", NULL);
+    AddTest("test_attribute_iterate_group", test_attribute_iterate_group, NULL,
+            "attribute iteration on a group", NULL);
+    AddTest("test_attribute_iterate_dataset", test_attribute_iterate_dataset, NULL,
+            "attribute iteration on a dataset", NULL);
+    AddTest("test_attribute_iterate_datatype", test_attribute_iterate_datatype, NULL,
+            "attribute iteration on a committed datatype", NULL);
+    AddTest("test_attribute_iterate_index_saving", test_attribute_iterate_index_saving, NULL,
+            "attribute iteration index saving capability", NULL);
+    AddTest("test_attribute_iterate_invalid_params", test_attribute_iterate_invalid_params, NULL,
+            "attribute iteration with invalid parameters", NULL);
+    AddTest("test_attribute_iterate_0_attributes", test_attribute_iterate_0_attributes, NULL,
+            "attribute iteration on object with 0 attributes", NULL);
+    AddTest("test_attribute_compound_subset", test_attribute_compound_subset, NULL,
+            "verification of attribute data using H5Awrite then H5Aread with compound type subsets", NULL);
+    AddTest("test_attribute_string_encodings", test_attribute_string_encodings, NULL,
+            "string encoding read/write correctness on attributes", NULL);
     AddTest("test_delete_attribute", test_delete_attribute, NULL, "attribute deletion", NULL);
-    AddTest("test_delete_attribute_invalid_params", test_delete_attribute_invalid_params, NULL, "attribute deletion with invalid parameters", NULL);
+    AddTest("test_delete_attribute_invalid_params", test_delete_attribute_invalid_params, NULL,
+            "attribute deletion with invalid parameters", NULL);
     AddTest("test_attribute_exists", test_attribute_exists, NULL, "attribute existence", NULL);
-    AddTest("test_attribute_exists_invalid_params", test_attribute_exists_invalid_params, NULL, "attribute existence with invalid parameters", NULL);
-    AddTest("test_attribute_duplicate_id", test_attribute_duplicate_id, NULL, "duplicated IDs for an attribute", NULL);
+    AddTest("test_attribute_exists_invalid_params", test_attribute_exists_invalid_params, NULL,
+            "attribute existence with invalid parameters", NULL);
+    AddTest("test_attribute_duplicate_id", test_attribute_duplicate_id, NULL,
+            "duplicated IDs for an attribute", NULL);
     AddTest("test_attribute_many", test_attribute_many, NULL, "creating many attributes", NULL);
-    AddTest("test_get_number_attributes", test_get_number_attributes, NULL, "retrieval of the number of attributes on an object", NULL);
+    AddTest("test_get_number_attributes", test_get_number_attributes, NULL,
+            "retrieval of the number of attributes on an object", NULL);
     AddTest("test_attr_shared_dtype", test_attr_shared_dtype, NULL, "shared datatype for attributes", NULL);
 }
