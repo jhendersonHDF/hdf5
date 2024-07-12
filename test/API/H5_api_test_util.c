@@ -648,6 +648,8 @@ create_test_container(char *filename, uint64_t vol_cap_flags)
     hid_t file_id  = H5I_INVALID_HID;
     hid_t group_id = H5I_INVALID_HID;
 
+    printf("Creating container file for tests\n");
+
     if (!(vol_cap_flags & H5VL_CAP_FLAG_FILE_BASIC)) {
         printf("   VOL connector doesn't support file creation\n");
         goto error;
@@ -657,6 +659,8 @@ create_test_container(char *filename, uint64_t vol_cap_flags)
         printf("    couldn't create testing container file '%s'\n", filename);
         goto error;
     }
+
+    printf("    created container file\n");
 
     if (vol_cap_flags & H5VL_CAP_FLAG_GROUP_BASIC) {
         /* Create container groups for each of the test interfaces

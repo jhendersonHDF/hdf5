@@ -20,8 +20,8 @@
 /*
  * Definitions for the testing structure.
  */
-#define MAXTESTNAME 16
-#define MAXTESTDESC 64
+#define MAXTESTNAME 64
+#define MAXTESTDESC 128
 
 typedef struct TestStruct {
     int  NumErrors;
@@ -182,7 +182,7 @@ TestUsage(void)
         print_func("%16s %s\n", "----", "-----------");
 
         for (i = 0; i < Index; i++)
-            print_func("%16s %s\n", Test[i].Name, Test[i].Description);
+            print_func("%16s -- %s\n", Test[i].Name, Test[i].Description);
 
         print_func("\n\n");
     }
@@ -330,9 +330,9 @@ PerformTests(void)
     if (mpi_rank_framework_g == 0) {
         MESSAGE(2, ("\n\n"));
         if (num_errs)
-            print_func("!!! %d Error(s) were detected !!!\n\n", (int)num_errs);
+            MESSAGE(VERBO_NONE, ("!!! %d Error(s) were detected !!!\n\n", (int)num_errs));
         else
-            print_func("All tests were successful. \n\n");
+            MESSAGE(VERBO_NONE, ("All tests were successful. \n\n"));
     }
 }
 

@@ -46,27 +46,27 @@ int mpi_rank;
 #ifdef H5_API_TEST_HAVE_ASYNC
 #define H5_API_PARALLEL_TESTS                                                                                \
     X(H5_API_TEST_NULL, "", NULL, 0)                                                                         \
-    X(H5_API_TEST_FILE, "file", H5_api_file_test_parallel, 1)                                                \
-    X(H5_API_TEST_GROUP, "group", H5_api_group_test_parallel, 1)                                             \
-    X(H5_API_TEST_DATASET, "dataset", H5_api_dataset_test_parallel, 1)                                       \
-    X(H5_API_TEST_DATATYPE, "datatype", H5_api_datatype_test_parallel, 1)                                    \
-    X(H5_API_TEST_ATTRIBUTE, "attribute", H5_api_attribute_test_parallel, 1)                                 \
-    X(H5_API_TEST_LINK, "link", H5_api_link_test_parallel, 1)                                                \
-    X(H5_API_TEST_OBJECT, "object", H5_api_object_test_parallel, 1)                                          \
-    X(H5_API_TEST_MISC, "misc", H5_api_misc_test_parallel, 1)                                                \
-    X(H5_API_TEST_ASYNC, "async", H5_api_async_test_parallel, 1)                                             \
+    X(H5_API_TEST_FILE, "file", H5_api_file_test_parallel_add, 1)                                            \
+    X(H5_API_TEST_GROUP, "group", H5_api_group_test_parallel_add, 1)                                         \
+    X(H5_API_TEST_DATASET, "dataset", H5_api_dataset_test_parallel_add, 1)                                   \
+    X(H5_API_TEST_DATATYPE, "datatype", H5_api_datatype_test_parallel_add, 1)                                \
+    X(H5_API_TEST_ATTRIBUTE, "attribute", H5_api_attribute_test_parallel_add, 1)                             \
+    X(H5_API_TEST_LINK, "link", H5_api_link_test_parallel_add, 1)                                            \
+    X(H5_API_TEST_OBJECT, "object", H5_api_object_test_parallel_add, 1)                                      \
+    X(H5_API_TEST_MISC, "misc", H5_api_misc_test_parallel_add, 1)                                            \
+    X(H5_API_TEST_ASYNC, "async", H5_api_async_test_parallel_add, 1)                                         \
     X(H5_API_TEST_MAX, "", NULL, 0)
 #else
 #define H5_API_PARALLEL_TESTS                                                                                \
     X(H5_API_TEST_NULL, "", NULL, 0)                                                                         \
-    X(H5_API_TEST_FILE, "file", H5_api_file_test_parallel, 1)                                                \
-    X(H5_API_TEST_GROUP, "group", H5_api_group_test_parallel, 1)                                             \
-    X(H5_API_TEST_DATASET, "dataset", H5_api_dataset_test_parallel, 1)                                       \
-    X(H5_API_TEST_DATATYPE, "datatype", H5_api_datatype_test_parallel, 1)                                    \
-    X(H5_API_TEST_ATTRIBUTE, "attribute", H5_api_attribute_test_parallel, 1)                                 \
-    X(H5_API_TEST_LINK, "link", H5_api_link_test_parallel, 1)                                                \
-    X(H5_API_TEST_OBJECT, "object", H5_api_object_test_parallel, 1)                                          \
-    X(H5_API_TEST_MISC, "misc", H5_api_misc_test_parallel, 1)                                                \
+    X(H5_API_TEST_FILE, "file", H5_api_file_test_parallel_add, 1)                                            \
+    X(H5_API_TEST_GROUP, "group", H5_api_group_test_parallel_add, 1)                                         \
+    X(H5_API_TEST_DATASET, "dataset", H5_api_dataset_test_parallel_add, 1)                                   \
+    X(H5_API_TEST_DATATYPE, "datatype", H5_api_datatype_test_parallel_add, 1)                                \
+    X(H5_API_TEST_ATTRIBUTE, "attribute", H5_api_attribute_test_parallel_add, 1)                             \
+    X(H5_API_TEST_LINK, "link", H5_api_link_test_parallel_add, 1)                                            \
+    X(H5_API_TEST_OBJECT, "object", H5_api_object_test_parallel_add, 1)                                      \
+    X(H5_API_TEST_MISC, "misc", H5_api_misc_test_parallel_add, 1)                                            \
     X(H5_API_TEST_MAX, "", NULL, 0)
 #endif
 
@@ -77,7 +77,7 @@ enum H5_api_test_type { H5_API_PARALLEL_TESTS };
 static const char *const H5_api_test_name[] = {H5_API_PARALLEL_TESTS};
 #undef X
 #define X(a, b, c, d) c,
-static int (*H5_api_test_func[])(void) = {H5_API_PARALLEL_TESTS};
+static void (*H5_api_test_add_func[])(void) = {H5_API_PARALLEL_TESTS};
 #undef X
 #define X(a, b, c, d) d,
 static int H5_api_test_enabled[] = {H5_API_PARALLEL_TESTS};
@@ -95,13 +95,13 @@ H5_api_test_name_to_type(const char *test_name)
 }
 
 static void
-H5_api_test_run(void)
+H5_api_test_add(void)
 {
     enum H5_api_test_type i;
 
     for (i = H5_API_TEST_FILE; i < H5_API_TEST_MAX; i++)
         if (H5_api_test_enabled[i])
-            (void)H5_api_test_func[i]();
+            H5_api_test_add_func[i]();
 }
 
 hid_t
@@ -169,9 +169,40 @@ error:
     return -1;
 }
 
+static int
+parse_command_line(int argc, char **argv)
+{
+    /* Simple argument checking, TODO can improve that later */
+    if (argc > 1) {
+        enum H5_api_test_type i = H5_api_test_name_to_type(argv[argc - 1]);
+        if (i != H5_API_TEST_NULL) {
+            /* Run only specific API test */
+            memset(H5_api_test_enabled, 0, sizeof(H5_api_test_enabled));
+            H5_api_test_enabled[i] = 1;
+        }
+    }
+
+    return 0;
+}
+
+static void
+usage(void)
+{
+    print_func("file        run only the file interface tests\n");
+    print_func("group       run only the group interface tests\n");
+    print_func("dataset     run only the dataset interface tests\n");
+    print_func("attribute   run only the attribute interface tests\n");
+    print_func("datatype    run only the datatype interface tests\n");
+    print_func("link        run only the link interface tests\n");
+    print_func("object      run only the object interface tests\n");
+    print_func("misc        run only the miscellaneous tests\n");
+    print_func("async       run only the async interface tests\n");
+}
+
 int
 main(int argc, char **argv)
 {
+    H5E_auto2_t default_err_func;
     const char *vol_connector_string;
     const char *vol_connector_name;
     unsigned    seed;
@@ -180,6 +211,7 @@ main(int argc, char **argv)
     hid_t       registered_con_id         = H5I_INVALID_HID;
     char       *vol_connector_string_copy = NULL;
     char       *vol_connector_info        = NULL;
+    void       *default_err_data          = NULL;
     int         required                  = MPI_THREAD_MULTIPLE;
     int         provided;
 
@@ -195,19 +227,11 @@ main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
+    mpi_rank_framework_g = mpi_rank;
+
     if (provided < required) {
         if (MAINPROCESS)
             printf("** INFO: couldn't initialize with MPI_THREAD_MULTIPLE threading support **\n");
-    }
-
-    /* Simple argument checking, TODO can improve that later */
-    if (argc > 1) {
-        enum H5_api_test_type i = H5_api_test_name_to_type(argv[1]);
-        if (i != H5_API_TEST_NULL) {
-            /* Run only specific API test */
-            memset(H5_api_test_enabled, 0, sizeof(H5_api_test_enabled));
-            H5_api_test_enabled[i] = 1;
-        }
     }
 
     /*
@@ -216,6 +240,35 @@ main(int argc, char **argv)
      * collective initialization.
      */
     H5open();
+
+    /* Store current error stack printing function since TestInit unsets it */
+    H5Eget_auto2(H5E_DEFAULT, &default_err_func, &default_err_data);
+
+    /* Initialize testing framework */
+    TestInit(argv[0], usage, NULL);
+
+    /* Reset error stack printing function */
+    H5Eset_auto2(H5E_DEFAULT, default_err_func, default_err_data);
+
+    /* Hide all output from testing framework and replace with our own */
+    SetTestVerbosity(VERBO_NONE);
+
+    /* Parse command line separately from the test framework since
+     * tests need to be added before TestParseCmdLine in order for
+     * the -help option to show them, but we need to know ahead of
+     * time which tests to add if only a specific interface's tests
+     * are going to be run.
+     */
+    parse_command_line(argc, argv);
+
+    /* Add tests */
+    H5_api_test_add();
+
+    /* Display testing information */
+    TestInfo(argv[0]);
+
+    /* Parse command line arguments */
+    TestParseCmdLine(argc, argv);
 
     n_tests_run_g     = 0;
     n_tests_passed_g  = 0;
@@ -285,7 +338,7 @@ main(int argc, char **argv)
         printf("  - Test file name: '%s'\n", H5_api_test_parallel_filename);
         printf("  - Number of MPI ranks: %d\n", mpi_size);
         printf("  - Test seed: %u\n", seed);
-        printf("\n\n");
+        printf("\n");
     }
 
     BEGIN_INDEPENDENT_OP(create_fapl)
@@ -381,11 +434,26 @@ main(int argc, char **argv)
     }
     END_INDEPENDENT_OP(create_test_container);
 
-    /* Run all the tests that are enabled */
-    H5_api_test_run();
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    /* Perform tests */
+    PerformTests();
 
     if (MAINPROCESS)
-        printf("Cleaning up testing files\n");
+        printf("\n");
+
+    if (MAINPROCESS) {
+        /* Display test summary, if requested */
+        if (GetTestSummary())
+            TestSummary();
+
+        /* Clean up test files, if allowed */
+        if (GetTestCleanup() && !getenv(HDF5_NOCLEANUP))
+            TestCleanup();
+
+        printf("Deleting container file for tests\n\n");
+    }
+
     H5Fdelete(H5_api_test_parallel_filename, fapl_id);
 
     if (n_tests_run_g > 0) {
@@ -393,7 +461,7 @@ main(int argc, char **argv)
             printf("The below statistics are minimum values due to the possibility of some ranks failing a "
                    "test while others pass:\n");
 
-        if (MPI_SUCCESS != MPI_Allreduce(MPI_IN_PLACE, &n_tests_passed_g, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN,
+        if (MPI_SUCCESS != MPI_Allreduce(MPI_IN_PLACE, &n_tests_passed_g, 1, H5_SIZE_T_AS_MPI_TYPE, MPI_MIN,
                                          MPI_COMM_WORLD)) {
             if (MAINPROCESS)
                 printf("    failed to collect consensus about the minimum number of tests that passed -- "
@@ -405,7 +473,7 @@ main(int argc, char **argv)
                    n_tests_passed_g > 0 ? "At least " : "", n_tests_passed_g, n_tests_run_g,
                    ((double)n_tests_passed_g / (double)n_tests_run_g * 100.0), vol_connector_name);
 
-        if (MPI_SUCCESS != MPI_Allreduce(MPI_IN_PLACE, &n_tests_failed_g, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN,
+        if (MPI_SUCCESS != MPI_Allreduce(MPI_IN_PLACE, &n_tests_failed_g, 1, H5_SIZE_T_AS_MPI_TYPE, MPI_MIN,
                                          MPI_COMM_WORLD)) {
             if (MAINPROCESS)
                 printf("    failed to collect consensus about the minimum number of tests that failed -- "
@@ -438,11 +506,24 @@ main(int argc, char **argv)
             fprintf(stderr, "    failed to close MPI FAPL\n");
     }
 
+    free(vol_connector_string_copy);
+    vol_connector_string_copy = NULL;
+
+    if (GetTestNumErrs() > 0)
+        n_tests_failed_g += (size_t)GetTestNumErrs();
+
+    /* Release test infrastructure */
+    TestShutdown();
+
     H5close();
 
     MPI_Finalize();
 
-    exit(EXIT_SUCCESS);
+    /* Exit failure if errors encountered; else exit success. */
+    if (n_tests_failed_g > 0)
+        exit(EXIT_FAILURE);
+    else
+        exit(EXIT_SUCCESS);
 
 error:
     free(vol_connector_string_copy);

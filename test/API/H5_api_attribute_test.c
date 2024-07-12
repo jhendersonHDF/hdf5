@@ -20,103 +20,70 @@
  *         order value gets reset when all attributes are removed.
  */
 
-static int test_create_attribute_on_root(void);
-static int test_create_attribute_on_dataset(void);
-static int test_create_attribute_on_datatype(void);
-static int test_create_attribute_with_null_space(void);
-static int test_create_attribute_with_scalar_space(void);
-static int test_create_attribute_with_space_in_name(void);
-static int test_create_attribute_invalid_params(void);
-static int test_open_attribute(void);
-static int test_open_attribute_invalid_params(void);
-static int test_write_attribute(void);
-static int test_write_attribute_invalid_params(void);
-static int test_read_attribute(void);
-static int test_read_attribute_invalid_params(void);
-static int test_read_empty_attribute(void);
-static int test_close_attribute_invalid_id(void);
-static int test_get_attribute_space_and_type(void);
-static int test_get_attribute_space_and_type_invalid_params(void);
-static int test_attribute_property_lists(void);
-static int test_get_attribute_name(void);
-static int test_get_attribute_name_invalid_params(void);
-static int test_get_attribute_storage_size(void);
-static int test_get_attribute_info(void);
-static int test_get_attribute_info_invalid_params(void);
-static int test_rename_attribute(void);
-static int test_rename_attribute_invalid_params(void);
-static int test_attribute_iterate_group(void);
-static int test_attribute_iterate_dataset(void);
-static int test_attribute_iterate_datatype(void);
-static int test_attribute_iterate_index_saving(void);
-static int test_attribute_iterate_invalid_params(void);
-static int test_attribute_iterate_0_attributes(void);
-static int test_attribute_compound_subset(void);
-static int test_attribute_string_encodings(void);
-static int test_delete_attribute(void);
-static int test_delete_attribute_invalid_params(void);
-static int test_attribute_exists(void);
-static int test_attribute_exists_invalid_params(void);
-static int test_attribute_many(void);
-static int test_attribute_duplicate_id(void);
-static int test_get_number_attributes(void);
-static int test_attr_shared_dtype(void);
+static void print_attribute_test_header(void);
+static void test_create_attribute_on_root(void);
+static void test_create_attribute_on_dataset(void);
+static void test_create_attribute_on_datatype(void);
+static void test_create_attribute_with_null_space(void);
+static void test_create_attribute_with_scalar_space(void);
+static void test_create_attribute_with_space_in_name(void);
+static void test_create_attribute_invalid_params(void);
+static void test_open_attribute(void);
+static void test_open_attribute_invalid_params(void);
+static void test_write_attribute(void);
+static void test_write_attribute_invalid_params(void);
+static void test_read_attribute(void);
+static void test_read_attribute_invalid_params(void);
+static void test_read_empty_attribute(void);
+static void test_close_attribute_invalid_id(void);
+static void test_get_attribute_space_and_type(void);
+static void test_get_attribute_space_and_type_invalid_params(void);
+static void test_attribute_property_lists(void);
+static void test_get_attribute_name(void);
+static void test_get_attribute_name_invalid_params(void);
+static void test_get_attribute_storage_size(void);
+static void test_get_attribute_info(void);
+static void test_get_attribute_info_invalid_params(void);
+static void test_rename_attribute(void);
+static void test_rename_attribute_invalid_params(void);
+static void test_attribute_iterate_group(void);
+static void test_attribute_iterate_dataset(void);
+static void test_attribute_iterate_datatype(void);
+static void test_attribute_iterate_index_saving(void);
+static void test_attribute_iterate_invalid_params(void);
+static void test_attribute_iterate_0_attributes(void);
+static void test_attribute_compound_subset(void);
+static void test_attribute_string_encodings(void);
+static void test_delete_attribute(void);
+static void test_delete_attribute_invalid_params(void);
+static void test_attribute_exists(void);
+static void test_attribute_exists_invalid_params(void);
+static void test_attribute_many(void);
+static void test_attribute_duplicate_id(void);
+static void test_get_number_attributes(void);
+static void test_attr_shared_dtype(void);
 
 static herr_t attr_iter_callback1(hid_t location_id, const char *attr_name, const H5A_info_t *ainfo,
                                   void *op_data);
 static herr_t attr_iter_callback2(hid_t location_id, const char *attr_name, const H5A_info_t *ainfo,
                                   void *op_data);
 
-/*
- * The array of attribute tests to be performed.
- */
-static int (*attribute_tests[])(void) = {test_create_attribute_on_root,
-                                         test_create_attribute_on_dataset,
-                                         test_create_attribute_on_datatype,
-                                         test_create_attribute_with_null_space,
-                                         test_create_attribute_with_scalar_space,
-                                         test_create_attribute_with_space_in_name,
-                                         test_create_attribute_invalid_params,
-                                         test_open_attribute,
-                                         test_open_attribute_invalid_params,
-                                         test_write_attribute,
-                                         test_write_attribute_invalid_params,
-                                         test_read_attribute,
-                                         test_read_attribute_invalid_params,
-                                         test_read_empty_attribute,
-                                         test_close_attribute_invalid_id,
-                                         test_get_attribute_space_and_type,
-                                         test_get_attribute_space_and_type_invalid_params,
-                                         test_attribute_property_lists,
-                                         test_get_attribute_name,
-                                         test_get_attribute_name_invalid_params,
-                                         test_get_attribute_storage_size,
-                                         test_get_attribute_info,
-                                         test_get_attribute_info_invalid_params,
-                                         test_rename_attribute,
-                                         test_rename_attribute_invalid_params,
-                                         test_attribute_iterate_group,
-                                         test_attribute_iterate_dataset,
-                                         test_attribute_iterate_datatype,
-                                         test_attribute_iterate_index_saving,
-                                         test_attribute_iterate_invalid_params,
-                                         test_attribute_iterate_0_attributes,
-                                         test_attribute_compound_subset,
-                                         test_attribute_string_encodings,
-                                         test_delete_attribute,
-                                         test_delete_attribute_invalid_params,
-                                         test_attribute_exists,
-                                         test_attribute_exists_invalid_params,
-                                         test_attribute_duplicate_id,
-                                         test_attribute_many,
-                                         test_get_number_attributes,
-                                         test_attr_shared_dtype};
+static void
+print_attribute_test_header(void)
+{
+    printf("\n");
+    printf("**********************************************\n");
+    printf("*                                            *\n");
+    printf("*            API Attribute Tests             *\n");
+    printf("*                                            *\n");
+    printf("**********************************************\n\n");
+}
 
 /*
  * A test to check that an attribute can be created on
  * the root group.
  */
-static int
+static void
 test_create_attribute_on_root(void)
 {
     htri_t attr_exists;
@@ -131,7 +98,7 @@ test_create_attribute_on_root(void)
     if (!(vol_cap_flags_g & H5VL_CAP_FLAG_FILE_BASIC) || !(vol_cap_flags_g & H5VL_CAP_FLAG_ATTR_BASIC)) {
         SKIPPED();
         printf("    API functions for basic file or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -232,7 +199,7 @@ test_create_attribute_on_root(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -246,14 +213,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can be created on
  * a dataset.
  */
-static int
+static void
 test_create_attribute_on_dataset(void)
 {
     htri_t attr_exists;
@@ -275,7 +242,7 @@ test_create_attribute_on_dataset(void)
         SKIPPED();
         printf("    API functions for basic file, group, dataset, or attribute aren't supported with this "
                "connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -412,7 +379,7 @@ test_create_attribute_on_dataset(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -431,14 +398,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can be created on
  * a committed datatype.
  */
-static int
+static void
 test_create_attribute_on_datatype(void)
 {
     htri_t attr_exists;
@@ -459,7 +426,7 @@ test_create_attribute_on_datatype(void)
         SKIPPED();
         printf("    API functions for basic file, group, stored datatype, or attribute aren't supported "
                "with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -589,7 +556,7 @@ test_create_attribute_on_datatype(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -606,14 +573,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that creating an attribute with a
  * NULL dataspace is not problematic.
  */
-static int
+static void
 test_create_attribute_with_null_space(void)
 {
     htri_t attr_exists;
@@ -631,7 +598,7 @@ test_create_attribute_with_null_space(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -703,7 +670,7 @@ test_create_attribute_with_null_space(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -717,14 +684,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that creating an attribute with a
  * scalar dataspace is not problematic.
  */
-static int
+static void
 test_create_attribute_with_scalar_space(void)
 {
     htri_t attr_exists;
@@ -742,7 +709,7 @@ test_create_attribute_with_scalar_space(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -814,7 +781,7 @@ test_create_attribute_with_scalar_space(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -828,14 +795,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that a space in an attribute's name
  * is not problematic.
  */
-static int
+static void
 test_create_attribute_with_space_in_name(void)
 {
     htri_t attr_exists;
@@ -855,7 +822,7 @@ test_create_attribute_with_space_in_name(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -919,7 +886,7 @@ test_create_attribute_with_space_in_name(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -934,14 +901,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can't be created when
  * H5Acreate is passed invalid parameters.
  */
-static int
+static void
 test_create_attribute_invalid_params(void)
 {
     hid_t file_id         = H5I_INVALID_HID;
@@ -958,7 +925,7 @@ test_create_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -1364,7 +1331,7 @@ test_create_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -1378,13 +1345,13 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test for H5Aopen(_by_idx).
  */
-static int
+static void
 test_open_attribute(void)
 {
     hid_t file_id         = H5I_INVALID_HID;
@@ -1402,7 +1369,7 @@ test_open_attribute(void)
         SKIPPED();
         printf("    API functions for basic file, group, or attribute aren't supported "
                "with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -1766,7 +1733,7 @@ test_open_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -1781,14 +1748,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can't be opened when
  * H5Aopen(_by_name/_by_idx) is passed invalid parameters.
  */
-static int
+static void
 test_open_attribute_invalid_params(void)
 {
     hid_t file_id         = H5I_INVALID_HID;
@@ -1805,7 +1772,7 @@ test_open_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -2282,7 +2249,7 @@ test_open_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -2296,14 +2263,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that a simple write to an attribute
  * can be made.
  */
-static int
+static void
 test_write_attribute(void)
 {
     hsize_t dims[ATTRIBUTE_WRITE_TEST_SPACE_RANK];
@@ -2324,7 +2291,7 @@ test_write_attribute(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or file flush aren't supported with "
                "this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -2410,7 +2377,7 @@ test_write_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -2425,14 +2392,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that writing an attribute fails when
  * H5Awrite is passed invalid parameters.
  */
-static int
+static void
 test_write_attribute_invalid_params(void)
 {
     hsize_t dims[ATTRIBUTE_WRITE_INVALID_PARAMS_TEST_SPACE_RANK];
@@ -2454,7 +2421,7 @@ test_write_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -2599,7 +2566,7 @@ test_write_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -2614,7 +2581,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -2622,7 +2589,7 @@ error:
  * and verified after it has been written to an
  * attribute.
  */
-static int
+static void
 test_read_attribute(void)
 {
     hsize_t dims[ATTRIBUTE_READ_TEST_SPACE_RANK];
@@ -2644,7 +2611,7 @@ test_read_attribute(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -2753,7 +2720,7 @@ test_read_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -2770,14 +2737,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that reading an attribute fails when
  * H5Aread is passed invalid parameters.
  */
-static int
+static void
 test_read_attribute_invalid_params(void)
 {
     hsize_t dims[ATTRIBUTE_READ_INVALID_PARAMS_TEST_SPACE_RANK];
@@ -2800,7 +2767,7 @@ test_read_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -2967,7 +2934,7 @@ test_read_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -2984,13 +2951,13 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * Test reading an empty attribute is ok
  */
-static int
+static void
 test_read_empty_attribute(void)
 {
     hsize_t dims[ATTRIBUTE_READ_EMPTY_SPACE_RANK];
@@ -3011,7 +2978,7 @@ test_read_empty_attribute(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -3096,7 +3063,7 @@ test_read_empty_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -3111,13 +3078,13 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 /*
  * A test to check that H5Aclose fails when it is passed
  * an invalid attribute ID.
  */
-static int
+static void
 test_close_attribute_invalid_id(void)
 {
     herr_t err_ret = -1;
@@ -3129,7 +3096,7 @@ test_close_attribute_invalid_id(void)
     if (!(vol_cap_flags_g & H5VL_CAP_FLAG_FILE_BASIC) || !(vol_cap_flags_g & H5VL_CAP_FLAG_ATTR_BASIC)) {
         SKIPPED();
         printf("    API functions for basic file or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -3155,7 +3122,7 @@ test_close_attribute_invalid_id(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -3164,7 +3131,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -3172,7 +3139,7 @@ error:
  * dataspace and datatype can be retrieved with
  * H5Aget_space and H5Aget_type, respectively.
  */
-static int
+static void
 test_get_attribute_space_and_type(void)
 {
     hsize_t attr_dims[ATTRIBUTE_GET_SPACE_TYPE_TEST_SPACE_RANK];
@@ -3195,7 +3162,7 @@ test_get_attribute_space_and_type(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or attribute aren't supported with "
                "this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -3453,7 +3420,7 @@ test_get_attribute_space_and_type(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -3469,7 +3436,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -3477,7 +3444,7 @@ error:
  * can't be retrieved when H5Aget_space and H5Aget_type are passed
  * invalid parameters, respectively.
  */
-static int
+static void
 test_get_attribute_space_and_type_invalid_params(void)
 {
     htri_t attr_exists;
@@ -3498,7 +3465,7 @@ test_get_attribute_space_and_type_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -3614,7 +3581,7 @@ test_get_attribute_space_and_type_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -3630,7 +3597,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -3638,7 +3605,7 @@ error:
  * can be persisted and that a valid copy of that ACPL can
  * be retrieved later with a call to H5Aget_create_plist.
  */
-static int
+static void
 test_attribute_property_lists(void)
 {
     H5T_cset_t encoding = H5T_CSET_UTF8;
@@ -3658,7 +3625,7 @@ test_attribute_property_lists(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or getting property list aren't "
                "supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -3897,7 +3864,7 @@ test_attribute_property_lists(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -3915,7 +3882,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -3923,7 +3890,7 @@ error:
  * correctly retrieved with H5Aget_name and
  * H5Aget_name_by_idx.
  */
-static int
+static void
 test_get_attribute_name(void)
 {
     ssize_t name_buf_size;
@@ -3945,7 +3912,7 @@ test_get_attribute_name(void)
         SKIPPED();
         printf("    API functions for basic file, group, or attribute aren't supported "
                "with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -4395,7 +4362,7 @@ test_get_attribute_name(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -4412,7 +4379,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -4420,7 +4387,7 @@ error:
  * retrieved when H5Aget_name(_by_idx) is passed invalid
  * parameters.
  */
-static int
+static void
 test_get_attribute_name_invalid_params(void)
 {
     ssize_t name_buf_size;
@@ -4441,7 +4408,7 @@ test_get_attribute_name_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -4754,7 +4721,7 @@ test_get_attribute_name_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -4770,26 +4737,26 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test for H5Aget_storage_size.
  */
-static int
+static void
 test_get_attribute_storage_size(void)
 {
     TESTING("H5Aget_storage_size");
 
     SKIPPED();
 
-    return 0;
+    return;
 }
 
 /*
  * A test to check the functionality of H5Aget_info(_by_idx).
  */
-static int
+static void
 test_get_attribute_info(void)
 {
     H5A_info_t attr_info;
@@ -4810,7 +4777,7 @@ test_get_attribute_info(void)
         SKIPPED();
         printf("    API functions for basic file, group, or attribute aren't supported "
                "with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -5415,7 +5382,7 @@ test_get_attribute_info(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -5430,14 +5397,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that H5Aget_info(_by_name/_by_idx)
  * doesn't succeed when passed invalid parameters.
  */
-static int
+static void
 test_get_attribute_info_invalid_params(void)
 {
     H5A_info_t attr_info;
@@ -5458,7 +5425,7 @@ test_get_attribute_info_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -5878,7 +5845,7 @@ test_get_attribute_info_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -5892,14 +5859,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can be renamed
  * with H5Arename and H5Arename_by_name.
  */
-static int
+static void
 test_rename_attribute(void)
 {
     htri_t attr_exists;
@@ -5918,7 +5885,7 @@ test_rename_attribute(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -6094,7 +6061,7 @@ test_rename_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -6109,14 +6076,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can't be renamed
  * when H5Arename(_by_name) is passed invalid parameters.
  */
-static int
+static void
 test_rename_attribute_invalid_params(void)
 {
     htri_t attr_exists;
@@ -6136,7 +6103,7 @@ test_rename_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -6463,7 +6430,7 @@ test_rename_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -6478,7 +6445,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -6488,7 +6455,7 @@ error:
  * order of both attribute name and attribute
  * creation order.
  */
-static int
+static void
 test_attribute_iterate_group(void)
 {
     size_t link_counter;
@@ -6509,7 +6476,7 @@ test_attribute_iterate_group(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or iterate aren't "
                "supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -6855,7 +6822,7 @@ test_attribute_iterate_group(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -6870,7 +6837,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -6880,7 +6847,7 @@ error:
  * order of both attribute name and attribute
  * creation order.
  */
-static int
+static void
 test_attribute_iterate_dataset(void)
 {
     size_t link_counter;
@@ -6905,7 +6872,7 @@ test_attribute_iterate_dataset(void)
         SKIPPED();
         printf("    API functions for basic file, group, dataset, attribute, or iterate "
                "aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -7276,7 +7243,7 @@ test_attribute_iterate_dataset(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -7294,7 +7261,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -7304,7 +7271,7 @@ error:
  * decreasing order of both attribute name and attribute
  * creation order.
  */
-static int
+static void
 test_attribute_iterate_datatype(void)
 {
     size_t link_counter;
@@ -7327,7 +7294,7 @@ test_attribute_iterate_datatype(void)
         SKIPPED();
         printf("    API functions for basic file, group, stored datatype, attribute, or iterate "
                "aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -7693,7 +7660,7 @@ test_attribute_iterate_datatype(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -7709,7 +7676,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -7719,14 +7686,14 @@ error:
  * order of both attribute name and attribute
  * creation order.
  */
-static int
+static void
 test_attribute_iterate_index_saving(void)
 {
     TESTING("attribute iteration index saving capability");
 
     SKIPPED();
 
-    return 1;
+    return;
 }
 
 /*
@@ -7734,7 +7701,7 @@ test_attribute_iterate_index_saving(void)
  * be iterated over when H5Aiterate(_by_name) is
  * passed invalid parameters.
  */
-static int
+static void
 test_attribute_iterate_invalid_params(void)
 {
     herr_t err_ret = -1;
@@ -7754,7 +7721,7 @@ test_attribute_iterate_invalid_params(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or iterate aren't supported with this "
                "connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -8130,7 +8097,7 @@ test_attribute_iterate_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -8147,7 +8114,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -8155,7 +8122,7 @@ error:
  * on an object with no attributes attached to it is
  * not problematic.
  */
-static int
+static void
 test_attribute_iterate_0_attributes(void)
 {
     hid_t file_id         = H5I_INVALID_HID;
@@ -8173,7 +8140,7 @@ test_attribute_iterate_0_attributes(void)
         SKIPPED();
         printf("    API functions for basic file, group, dataset, attribute, or iterate "
                "aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -8320,7 +8287,7 @@ test_attribute_iterate_0_attributes(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -8334,7 +8301,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /* A compound type for test_attribute_compound_subset */
@@ -8347,7 +8314,7 @@ typedef struct attribute_compound_io_t {
  * A test to ensure that data is read back correctly from a attribute after it has
  * been written, using subsets of compound datatypes
  */
-static int
+static void
 test_attribute_compound_subset(void)
 {
     hsize_t                 dims[1] = {ATTRIBUTE_COMPOUND_IO_ATTR_DIMS};
@@ -8373,7 +8340,7 @@ test_attribute_compound_subset(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -8581,7 +8548,7 @@ test_attribute_compound_subset(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -8597,14 +8564,14 @@ error:
     }
     H5E_END_TRY;
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that attributes preserve data
  * correctness for strings with ASCII or UTF-8 char sets
  */
-static int
+static void
 test_attribute_string_encodings(void)
 {
     hid_t   file_id                               = H5I_INVALID_HID;
@@ -8630,7 +8597,7 @@ test_attribute_string_encodings(void)
         SKIPPED();
         printf("    API functions for basic file, group, basic or more dataset aren't supported with this "
                "connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -8841,7 +8808,7 @@ test_attribute_string_encodings(void)
         free(read_buf);
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -8861,14 +8828,14 @@ error:
     }
     H5E_END_TRY;
 
-    return 1;
+    return;
 }
 
 /*
  * A test to check that an attribute can be deleted
  * using H5Adelete(_by_idx).
  */
-static int
+static void
 test_delete_attribute(void)
 {
     htri_t attr_exists;
@@ -8888,7 +8855,7 @@ test_delete_attribute(void)
         SKIPPED();
         printf("    API functions for basic file, group, or attribute aren't supported "
                "with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -10078,7 +10045,7 @@ test_delete_attribute(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -10093,7 +10060,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -10101,7 +10068,7 @@ error:
  * when H5Adelete(_by_name/_by_idx) is passed invalid
  * parameters.
  */
-static int
+static void
 test_delete_attribute_invalid_params(void)
 {
     herr_t err_ret = -1;
@@ -10121,7 +10088,7 @@ test_delete_attribute_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -10499,7 +10466,7 @@ test_delete_attribute_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -10513,13 +10480,13 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test for H5Aexists and H5Aexists_by_name.
  */
-static int
+static void
 test_attribute_exists(void)
 {
     htri_t attr_exists;
@@ -10538,7 +10505,7 @@ test_attribute_exists(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -10639,7 +10606,7 @@ test_attribute_exists(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -10653,14 +10620,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to ensure that H5Aexists(_by_name) will fail when
  * given invalid parameters.
  */
-static int
+static void
 test_attribute_exists_invalid_params(void)
 {
     herr_t err_ret = -1;
@@ -10680,7 +10647,7 @@ test_attribute_exists_invalid_params(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -10916,7 +10883,7 @@ test_attribute_exists_invalid_params(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -10930,14 +10897,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to make sure many attributes can be written
  * to the file
  */
-static int
+static void
 test_attribute_many(void)
 {
     unsigned u;
@@ -10958,7 +10925,7 @@ test_attribute_many(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -11026,7 +10993,7 @@ test_attribute_many(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -11040,14 +11007,14 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
  * A test to make sure an attribute can be opened for
  * a second time
  */
-static int
+static void
 test_attribute_duplicate_id(void)
 {
     htri_t attr_exists;
@@ -11066,7 +11033,7 @@ test_attribute_duplicate_id(void)
         SKIPPED();
         printf(
             "    API functions for basic file, group, or attribute aren't supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -11138,7 +11105,7 @@ test_attribute_duplicate_id(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -11153,7 +11120,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -11162,7 +11129,7 @@ error:
  *
  * XXX: Cover all of the cases and move to H5O tests.
  */
-static int
+static void
 test_get_number_attributes(void)
 {
     H5O_info2_t obj_info;
@@ -11182,7 +11149,7 @@ test_get_number_attributes(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, or object aren't supported with this "
                "connector\n");
-        return 0;
+        return;
     }
 
     TESTING_2("test setup");
@@ -11318,7 +11285,7 @@ test_get_number_attributes(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -11332,7 +11299,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 /*
@@ -11341,7 +11308,7 @@ error:
  *
  * XXX: May move to H5O tests.
  */
-static int
+static void
 test_attr_shared_dtype(void)
 {
     H5O_info2_t obj_info;
@@ -11364,7 +11331,7 @@ test_attr_shared_dtype(void)
         SKIPPED();
         printf("    API functions for basic file, group, attribute, stored datatype, or object aren't "
                "supported with this connector\n");
-        return 0;
+        return;
     }
 
     if ((file_id = H5Fopen(H5_api_test_filename, H5F_ACC_RDWR, H5P_DEFAULT)) < 0) {
@@ -11479,7 +11446,7 @@ test_attr_shared_dtype(void)
 
     PASSED();
 
-    return 0;
+    return;
 
 error:
     H5E_BEGIN_TRY
@@ -11492,7 +11459,7 @@ error:
     }
     H5E_END_TRY
 
-    return 1;
+    return;
 }
 
 static herr_t
@@ -11581,26 +11548,54 @@ attr_iter_callback2(hid_t location_id, const char *attr_name, const H5A_info_t *
     UNUSED(ainfo);
     UNUSED(op_data);
 
-    return 0;
+    return H5_ITER_CONT;
 }
 
-int
-H5_api_attribute_test(void)
+void
+H5_api_attribute_test_add(void)
 {
-    size_t i;
-    int    nerrors;
+    /* Add a fake test to print out a header to distinguish different test interfaces */
+    AddTest("print_attribute_test_header", print_attribute_test_header, NULL, "Prints header for attribute tests", NULL);
 
-    printf("**********************************************\n");
-    printf("*                                            *\n");
-    printf("*            API Attribute Tests             *\n");
-    printf("*                                            *\n");
-    printf("**********************************************\n\n");
-
-    for (i = 0, nerrors = 0; i < ARRAY_LENGTH(attribute_tests); i++) {
-        nerrors += (*attribute_tests[i])() ? 1 : 0;
-    }
-
-    printf("\n");
-
-    return nerrors;
+    AddTest("test_create_attribute_on_root", test_create_attribute_on_root, NULL, "attribute creation on the root group", NULL);
+    AddTest("test_create_attribute_on_dataset", test_create_attribute_on_dataset, NULL, "attribute creation on a dataset", NULL);
+    AddTest("test_create_attribute_on_datatype", test_create_attribute_on_datatype, NULL, "attribute creation on a committed datatype", NULL);
+    AddTest("test_create_attribute_with_null_space", test_create_attribute_with_null_space, NULL, "attribute creation with a NULL dataspace", NULL);
+    AddTest("test_create_attribute_with_scalar_space", test_create_attribute_with_scalar_space, NULL, "attribute creation with a SCALAR dataspace", NULL);
+    AddTest("test_create_attribute_with_space_in_name", test_create_attribute_with_space_in_name, NULL, "attribute creation with a space in attribute's name", NULL);
+    AddTest("test_create_attribute_invalid_params", test_create_attribute_invalid_params, NULL, "attribute creation with invalid parameters", NULL);
+    AddTest("test_open_attribute", test_open_attribute, NULL, "attribute opening", NULL);
+    AddTest("test_open_attribute_invalid_params", test_open_attribute_invalid_params, NULL, "attribute opening with invalid parameters", NULL);
+    AddTest("test_write_attribute", test_write_attribute, NULL, "H5Awrite", NULL);
+    AddTest("test_write_attribute_invalid_params", test_write_attribute_invalid_params, NULL, "H5Awrite with invalid parameters", NULL);
+    AddTest("test_read_attribute", test_read_attribute, NULL, "H5Aread", NULL);
+    AddTest("test_read_attribute_invalid_params", test_read_attribute_invalid_params, NULL, "H5Aread with invalid parameters", NULL);
+    AddTest("test_read_empty_attribute", test_read_empty_attribute, NULL, "reading an empty attribute", NULL);
+    AddTest("test_close_attribute_invalid_id", test_close_attribute_invalid_id, NULL, "H5Aclose with an invalid attribute ID", NULL);
+    AddTest("test_get_attribute_space_and_type", test_get_attribute_space_and_type, NULL, "retrieval of an attribute's dataspace and datatype", NULL);
+    AddTest("test_get_attribute_space_and_type_invalid_params", test_get_attribute_space_and_type_invalid_params, NULL, "H5Aget_type/H5Aget_space with invalid parameters", NULL);
+    AddTest("test_attribute_property_lists", test_attribute_property_lists, NULL, "attribute property list operations", NULL);
+    AddTest("test_get_attribute_name", test_get_attribute_name, NULL, "retrieval of an attribute's name", NULL);
+    AddTest("test_get_attribute_name_invalid_params", test_get_attribute_name_invalid_params, NULL, "retrieval of an attribute's name with invalid parameters", NULL);
+    AddTest("test_get_attribute_storage_size", test_get_attribute_storage_size, NULL, "H5Aget_storage_size", NULL);
+    AddTest("test_get_attribute_info", test_get_attribute_info, NULL, "retrieval of attribute info", NULL);
+    AddTest("test_get_attribute_info_invalid_params", test_get_attribute_info_invalid_params, NULL, "retrieval of attribute info with invalid parameters", NULL);
+    AddTest("test_rename_attribute", test_rename_attribute, NULL, "attribute renaming", NULL);
+    AddTest("test_rename_attribute_invalid_params", test_rename_attribute_invalid_params, NULL, "attribute renaming with invalid parameters", NULL);
+    AddTest("test_attribute_iterate_group", test_attribute_iterate_group, NULL, "attribute iteration on a group", NULL);
+    AddTest("test_attribute_iterate_dataset", test_attribute_iterate_dataset, NULL, "attribute iteration on a dataset", NULL);
+    AddTest("test_attribute_iterate_datatype", test_attribute_iterate_datatype, NULL, "attribute iteration on a committed datatype", NULL);
+    AddTest("test_attribute_iterate_index_saving", test_attribute_iterate_index_saving, NULL, "attribute iteration index saving capability", NULL);
+    AddTest("test_attribute_iterate_invalid_params", test_attribute_iterate_invalid_params, NULL, "attribute iteration with invalid parameters", NULL);
+    AddTest("test_attribute_iterate_0_attributes", test_attribute_iterate_0_attributes, NULL, "attribute iteration on object with 0 attributes", NULL);
+    AddTest("test_attribute_compound_subset", test_attribute_compound_subset, NULL, "verification of attribute data using H5Awrite then H5Aread with compound type subsets", NULL);
+    AddTest("test_attribute_string_encodings", test_attribute_string_encodings, NULL, "string encoding read/write correctness on attributes", NULL);
+    AddTest("test_delete_attribute", test_delete_attribute, NULL, "attribute deletion", NULL);
+    AddTest("test_delete_attribute_invalid_params", test_delete_attribute_invalid_params, NULL, "attribute deletion with invalid parameters", NULL);
+    AddTest("test_attribute_exists", test_attribute_exists, NULL, "attribute existence", NULL);
+    AddTest("test_attribute_exists_invalid_params", test_attribute_exists_invalid_params, NULL, "attribute existence with invalid parameters", NULL);
+    AddTest("test_attribute_duplicate_id", test_attribute_duplicate_id, NULL, "duplicated IDs for an attribute", NULL);
+    AddTest("test_attribute_many", test_attribute_many, NULL, "creating many attributes", NULL);
+    AddTest("test_get_number_attributes", test_get_number_attributes, NULL, "retrieval of the number of attributes on an object", NULL);
+    AddTest("test_attr_shared_dtype", test_attr_shared_dtype, NULL, "shared datatype for attributes", NULL);
 }
