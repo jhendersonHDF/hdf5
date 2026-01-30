@@ -354,8 +354,11 @@ H5HG__cache_heap_deserialize(const void *_image, size_t len, void *_udata, bool 
                 if (idx > max_idx)
                     max_idx = idx;
             }
-            else
+            else {
                 need = heap->obj[idx].size;
+                if (need == 0)
+                    HGOTO_ERROR(H5E_HEAP, H5E_BADVALUE, NULL, "heap object 0 has invalid size");
+            }
 
             /* Make sure the extra padding doesn't cause us to overrun
              * the buffer
