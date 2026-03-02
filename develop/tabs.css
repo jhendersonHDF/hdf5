@@ -1,17 +1,21 @@
 .tabs, .tabs2, .tabs3 {
-    background-image: var(--nav-gradient-image);
+    background-color: white;
     width: 100%;
     z-index: 101;
-    font-size: var(--nav-font-size-level1);
-    font-family: var(--font-family-nav);
+    font-size: 13px;
+    font-family: 'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
     display: table;
 }
 
+#navrow2, #navrow3, #navrow4 {
+    border-top: 1px solid #C4CFE5;
+}
+
 .tabs2 {
-    font-size: var(--nav-font-size-level2);
+    font-size: 10px;
 }
 .tabs3 {
-    font-size: var(--nav-font-size-level3);
+    font-size: 9px;
 }
 
 .tablist {
@@ -23,22 +27,25 @@
 .tablist li {
     float: left;
     display: table-cell;
-    background-image: var(--nav-gradient-image);
+    background-color: white;
     line-height: 36px;
     list-style: none;
 }
 
 .tablist a {
     display: block;
-    padding: 0 20px;
-    font-weight: bold;
-    background-image:var(--nav-separator-image);
-    background-repeat:no-repeat;
-    background-position:right;
-    color: var(--nav-text-normal-color);
-    text-shadow: var(--nav-text-normal-shadow);
+    margin: 5px 0;
+    padding: 0px 20px;
+    background-color: white;
+    color: #283A5D;
     text-decoration: none;
     outline: none;
+}
+
+.tablist a:focus {
+    outline: auto;
+    z-index: 10;
+    position: relative;
 }
 
 .tabs3 .tablist a {
@@ -46,17 +53,29 @@
 }
 
 .tablist a:hover {
-    background-image: var(--nav-gradient-hover-image);
-    background-repeat:repeat-x;
-    color: var(--nav-text-hover-color);
-    text-shadow: var(--nav-text-hover-shadow);
+    background-color: #DCE2EF;
+    border-radius: 5px;
     text-decoration: none;
 }
 
-.tablist li.current a {
-    background-image: var(--nav-gradient-active-image);
-    background-repeat:repeat-x;
-    color: var(--nav-text-active-color);
-    text-shadow: var(--nav-text-active-shadow);
+.tablist li.current {
+	position: relative;
 }
 
+.tablist li.current a:after {   
+	content: '';
+	position: absolute;
+	left: 15px;
+	right: 15px;
+	top: 35px;
+	height: 1px;
+	display: block;
+	background-color: #9CAFD4;
+	border: 1px solid #9CAFD4;
+	border-radius: 2px 2px 0px 0px;
+}
+
+#navrow4 .tablist li.current a:after {
+	left: 5px;
+	right: 5px;
+}
