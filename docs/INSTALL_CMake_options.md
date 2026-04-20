@@ -117,6 +117,7 @@ These options control how platform-specific binary installers and source package
 | `HDF5_PACK_MACOSX_FRAMEWORK` | `BOOL` | `OFF` | If `ON`, CPack will create a framework bundle for HDF5 when built on MacOS. |
 | `HDF_PACKAGE_NAMESPACE` | `STRING` | `hdf5::` | Specifies a string to use for namespacing CMake targets created by HDF5. |
 | `HDF_PACKAGE_EXT` | `STRING` | `""` (empty string) | Specifies a suffix to add to the names of several files included in HDF5 packages created. |
+| `HDF5_ENABLE_SBOM_GENERATION` | `BOOL` | `OFF` | If `ON`, creates SBOM (Software Bill of Materials) files for binary and source packages generated with CPack. Requires the `jq` program to be available. If `python3` is available, the created SBOM files will be validated against NTIA minimum element requirements using the [ntia-conformance-checker](https://github.com/spdx/ntia-conformance-checker) python package. |
 
 ### Compiler options
 

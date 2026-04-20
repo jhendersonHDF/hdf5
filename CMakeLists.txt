@@ -303,6 +303,7 @@ set (HDF5_JAVA_JTEST_LIB_TARGET   "${HDF5_JAVA_JTEST_LIB_CORENAME}")
 #-----------------------------------------------------------------------------
 set (HDF_CONFIG_DIR            ${HDF5_SOURCE_DIR}/config)
 set (HDF_RESOURCES_DIR         ${HDF5_SOURCE_DIR}/config/cmake)
+set (HDF_CONFIG_INSTALL_DIR    ${HDF5_SOURCE_DIR}/config/install)
 set (HDF5_SRC_DIR              ${HDF5_SOURCE_DIR}/src)
 set (HDF5_TEST_SRC_DIR         ${HDF5_SOURCE_DIR}/test)
 set (HDF5_TEST_PAR_DIR         ${HDF5_SOURCE_DIR}/testpar)
