@@ -12,6 +12,7 @@ Options settings for typical HDF5 configurations can be found in the [cacheinit.
 * [General options](#general-options)
   * [Installation options](#installation-options)
   * [Packaging options](#packaging-options)
+    * [SBOM options](#sbom-options)
   * [Compiler options](#compiler-options)
   * [MinGW-specific options](#mingw-specific-options)
 * [Programming language wrappers options](#programming-language-wrappers-options)
@@ -117,6 +118,18 @@ These options control how platform-specific binary installers and source package
 | `HDF5_PACK_MACOSX_FRAMEWORK` | `BOOL` | `OFF` | If `ON`, CPack will create a framework bundle for HDF5 when built on MacOS. |
 | `HDF_PACKAGE_NAMESPACE` | `STRING` | `hdf5::` | Specifies a string to use for namespacing CMake targets created by HDF5. |
 | `HDF_PACKAGE_EXT` | `STRING` | `""` (empty string) | Specifies a suffix to add to the names of several files included in HDF5 packages created. |
+
+#### SBOM options
+
+These options control how SBOM (Software Bill of Materials) documents are created when binary installers and source packages of HDF5 get built.
+
+| `HDF5_ENABLE_SBOM_GENERATION` | `BOOL` | `OFF` | If `ON`, creates SBOM (Software Bill of Materials) files for binary and source packages generated with CPack. Requires the `jq` program to be available. If `python3` is available, the created SBOM files will be validated against NTIA minimum element requirements using the [ntia-conformance-checker](https://github.com/spdx/ntia-conformance-checker) python package. |
+| `HDF5_SBOM_CREATOR_ORGANIZATION` | `STRING` | undefined | If defined, overrides the [Organization](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#68-creator-field) creation info field for created SBOM documents. The default value for this field is `The HDF Group`. |
+| `HDF5_SBOM_CREATOR_PERSON` | `STRING` | undefined | If defined, overrides the [Person](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#68-creator-field) creation info field for created SBOM documents. The default value for this field is a name or ID for the current user obtained by using a system tool (such as `id` on POSIX systems). |
+| `HDF5_SBOM_CREATOR_TOOL` | `STRING` | undefined | If defined, overrides the [Tool](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#68-creator-field) creation info field for created SBOM documents. The default value for this field is `CMake $version`, where `$version` is the version of the CMake software. |
+| `HDF5_SBOM_DOCUMENT_NAMESPACE` | `STRING` | undefined | If defined, partially overrides the [documentNamespace](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#65-spdx-document-namespace-field) field for created SBOM documents. The default for this field is the URI `https://www.hdfgroup.org/HDF5/$document_name`, where `$document_name` is the name of the resulting SBOM document file. Any value specified for this variable acts as a prefix and only overrides the portion of the URI that doesn't include `$document_name`. |
+| `HDF5_SBOM_LICENSE_LIST_VERSION` | `STRING` | undefined | If defined, overrides the [licenseListVersion](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#67-license-list-version-field) creation info field for created SBOM documents. The default value for this field is `3.22`. |
+| `HDF5_SBOM_DATA_LICENSE` | `STRING` | undefined | If defined, overrides the [dataLicense](https://spdx.github.io/spdx-spec/v2.3/document-creation-information/#62-data-license-field) field for created SBOM documents. The default value for this field is `CC0-1.0`. |
 
 ### Compiler options
 
