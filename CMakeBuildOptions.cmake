@@ -99,6 +99,9 @@ option (HDF5_BUILD_EXAMPLES "Build HDF5 Library Examples" ON)
 
 option (BUILD_TESTING "Build HDF5 Unit Testing" ON)
 
+option (HDF5_ENABLE_SBOM_GENERATION "Enable creation of SBOM files for binary and source packages" OFF)
+mark_as_advanced (HDF5_ENABLE_SBOM_GENERATION)
+
 #################################
 # Options with multiple choices #
 #################################
