@@ -1,4 +1,4 @@
-# HDF5 Build and Install Suggestions for Windows and Visual Studio (Full Version)
+# HDF5 Build and Install Suggestions for Windows and Visual Studio
 
 **These suggestions are for Visual Studio users.**
 
@@ -55,10 +55,3 @@ For static linking:
 * HDF5 libraries: `libhdf5.lib libhdf5_cpp.lib`
 * Compression libraries: `libszaec.lib libaec.lib libzlib.lib`
 * System libraries: `shlwapi.lib`
-
-## Helpful Pointers
-
-A community support forum is available; please see:
-https://forum.hdfgroup.org/c/hdf5/8.
-
-Or send email to help@hdfgroup.org for further assistance.

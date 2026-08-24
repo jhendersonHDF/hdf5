@@ -1,10 +1,10 @@
 # The `release_docs` directory
 
 This directory contains **release artifacts only**: changelogs, version history,
-release process documentation, and maintainer information.
+and release process documentation.
 
 User-facing guides (installation, build instructions, platform-specific docs)
-have been moved to the [`docs/`](../docs/) directory.
+exist in the [`docs/`](../docs/) directory.
 
 ## Contents
 
@@ -46,10 +46,6 @@ the history files from those releases and compare them by hand.
 ### RELEASE_PROCESS.md
 
 Documentation for how releases are created and managed.
-
-### MAINTAINERS.md
-
-Maintainer information for the project.
 
 ## Creating new releases
 
@@ -94,10 +90,10 @@ In the new release branch:
 * Create the release branch
 
 In the maintenance branch:
-* Add the contents of `CHANGELOG.md` to the beginnnig of `HISTORY-\[VERSION\].txt`
+* Add the contents of `CHANGELOG.md` to the beginning of `HISTORY-\[VERSION\].txt`
 * Clear out `CHANGELOG.md`
 
 ### EXPERIMENTAL release
 
-* Add the contents of `CHANGELOG.md` to the beginnnig of `HISTORY-\[VERSION\].txt`
+* Add the contents of `CHANGELOG.md` to the beginning of `HISTORY-\[VERSION\].txt`
 * Clear out `CHANGELOG.md`

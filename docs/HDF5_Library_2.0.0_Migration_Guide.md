@@ -191,9 +191,9 @@ The HDF5 download page also gives an example of building a 1.10-era application 
 **CMake example:**
 
 ```cmake
-find_package(HDF5 REQUIRED COMPONENTS C)
+find_package(HDF5 CONFIG REQUIRED COMPONENTS C)
 add_executable(my_app main.c)
-target_link_libraries(my_app PRIVATE HDF5::HDF5)
+target_link_libraries(my_app PRIVATE hdf5::hdf5)
 
 # If your codebase expects 1.14 APIs:
 target_compile_definitions(my_app PRIVATE H5_USE_114_API)

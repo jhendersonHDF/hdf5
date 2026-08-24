@@ -7,7 +7,7 @@
 > CMake uses the command line; however, the visual CMake tool is available for the configuration step. The steps are similar for all of the operating systems supported by CMake.
 >
 > 1. CMake for HDF5 development should be usable on any system where CMake is supported. Please send us any comments on how CMake support can be improved on any system.
-> 2. See the appendix at the bottom of this file for an example of using a `ctest` script for building and testing. See [INSTALL_CMake.md](./INSTALL_CMake.md) for more information.
+> 2. See the appendix at the bottom of this file for an example of using a `ctest` script for building and testing. See [INSTALL_script.md](./INSTALL_script.md) for more information.
 > 3. See the [CMake Config Mode Search Procedure](https://cmake.org/cmake/help/latest/command/find_package.html) for more information on finding packages.
 
 ---
@@ -154,8 +154,7 @@ project (HDF5MyApp C)
 set (LIB_TYPE STATIC) # or SHARED
 string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
 
-find_package (HDF5 NAMES hdf5 COMPONENTS C ${SEARCH_TYPE})
-# find_package (HDF5) # Find non-cmake built HDF5
+find_package (HDF5 CONFIG COMPONENTS C ${SEARCH_TYPE})
 
 set_directory_properties(PROPERTIES INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIR}")
 set (LINK_LIBS ${LINK_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
@@ -179,13 +178,10 @@ add_test (NAME test_example COMMAND ${example})
 Below is an example of a `ctest` script that can be used to build the examples. Adjust the values as necessary. Note that the defaults can be entered on the command line and the build folder is created as a sub-folder. Windows should adjust the forward slash to double backslashes, except for the `HDF_DIR` environment variable.
 
 > **NOTE:** this file is available in the HDF5 repository, for more information see:
-> [USING_CMake_Examples.md](./USING_CMake_Examples.md)
+> [USING_HDF5_Examples.md](./USING_HDF5_Examples.md)
 
 ```bash
 ctest -S HDF5_Examples.cmake -C Release -V -O test.log
 ```
 
 Also available at the HDF web site is a CMake application framework template. You can quickly add files to the framework and execute the script to compile your application with an installed HDF5 binary.
-
----
-**For further assistance, send email to help@hdfgroup.org**

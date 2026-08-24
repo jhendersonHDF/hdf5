@@ -777,7 +777,7 @@ if the library was built with C++ and Fortran.
 
 <h4>USING_HDF5_CMake.md:</h4>
 
-See <a href="https://\SRCURL/docs/USING_CMake_Examples.md">USING_CMake_Examples.md</a>.
+See <a href="https://\SRCURL/docs/USING_HDF5_Examples.md">USING_HDF5_Examples.md</a>.
 
 \section secLBCompilingVS Using Visual Studio
 
@@ -972,7 +972,7 @@ or on WINDOWS you may need to add the path to the bin folder to PATH.
 \section secLBCompilingCMake Compiling an Application with CMake
 
 \subsection subsecLBCompilingCMakeScripts CMake Scripts for Building Applications
-See <a href="https://\SRCURL/docs/USING_CMake_Examples.md">Using CMake to Build Applications</a> to build applications with different languages and options.
+See <a href="https://\SRCURL/docs/USING_HDF5_CMake.md">Using CMake to Build Applications</a> to build applications with different languages and options.
 
 For a more complete script (and to help resolve issues) see the script provided with the HDF5 Examples project.
 
@@ -980,7 +980,7 @@ For a more complete script (and to help resolve issues) see the script provided 
 The installed HDF5 can be verified by compiling the HDF5 Examples project, included with the CMake built HDF5 binaries
 in the share folder or you can go to the <a href="https://\SRCURL/HDF5Examples">HDF5 Examples</a> in the HDF5 github repository.
 
-Go into the share directory and follow the instructions in <a href="https://\SRCURL/docs/USING_CMake_Examples.md">Using CMake to Build Examples</a> to build the examples.
+Go into the share directory and follow the instructions in <a href="https://\SRCURL/docs/USING_HDF5_Examples.md">Using CMake to Build Examples</a> to build the examples.
 
 In general, users must first set the HDF5_ROOT environment variable to the installed location of the CMake
 configuration files for HDF5.
@@ -1004,13 +1004,13 @@ See the CMakeLists.txt file provided with these examples for how to use find_pac
 
 Please note that the find_package invocation changed to require "shared" or "static":
 \code
-      FIND_PACKAGE(HDF5 COMPONENTS C HL NO_MODULE REQUIRED shared)
-      FIND_PACKAGE(HDF5 COMPONENTS C HL NO_MODULE REQUIRED static)
+      find_package(HDF5 CONFIG COMPONENTS C HL REQUIRED shared)
+      find_package(HDF5 CONFIG COMPONENTS C HL REQUIRED static)
 \endcode
 
 Previously, the find_package invocation was:
 \code
-      FIND_PACKAGE(HDF5 COMPONENTS C HL NO_MODULE REQUIRED)
+      find_package(HDF5 COMPONENTS C HL NO_MODULE REQUIRED)
 \endcode
 
 <h4>My platform/compiler is not included. Can I still use the configuration files?</h4>

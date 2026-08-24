@@ -1,12 +1,10 @@
 # Build and Testing Instructions for HDF5's ROS3 VFD
 
-> **NOTE:** HDF5 2.0 and later requires CMake for building. See [INSTALL_CMake.md](./INSTALL_CMake.md) for complete build instructions using CMake Presets.
-
 ---
 
 ## Table of Contents
 
-* [Section I: Preconditions](#section-i)
+* [Section I: Prerequisites](#section-i)
 * [Section II: Obtaining the aws-c-s3 library](#section-ii)
 * [Section III: Building the aws-c-s3 library from source](#section-iii)
 * [Section IV: Building HDF5 with the ROS3 VFD enabled](#section-iv)
@@ -15,16 +13,22 @@
 ---
 
 <a id="section-i"></a>
-## I. Preconditions
+## I. Prerequisites
 
-* Refer to [INSTALL.md](./INSTALL.md) for preconditions and instructions for building HDF5.
+- HDF5's prerequisites - refer to [INSTALL.md](./INSTALL.md) for prerequisites and instructions for
+  building HDF5.
+
+- [`aws-c-s3` library](https://github.com/awslabs/aws-c-s3)
 
 ---
 
 <a id="section-ii"></a>
 ## II. Obtaining the `aws-c-s3` library
 
-As of the HDF5 2.0.0 release (or HDF5 commit `75fff3ed0663d3617e3c5cc3c57c1f0c83b38be4`), HDF5's ROS3 VFD requires the [`aws-c-s3` library](https://github.com/awslabs/aws-c-s3) in order to be built. This library is distributed by several package managers, usually as `aws-c-s3`, but consult your particular package manager for the name of this package if it's available.
+As of the HDF5 2.0.0 release (or HDF5 commit `75fff3ed0663d3617e3c5cc3c57c1f0c83b38be4`), HDF5's ROS3
+VFD requires the [`aws-c-s3` library](https://github.com/awslabs/aws-c-s3) in order to be built.
+This library is distributed by several package managers, usually as `aws-c-s3`, but consult your
+particular package manager for the name of this package if it's available.
 
 HDF5 installs this library in the following ways in CI testing.
 
@@ -34,7 +38,9 @@ HDF5 installs this library in the following ways in CI testing.
   ```bash
   vcpkg install aws-c-s3
   ```
-  *(Make sure to set `CMAKE_TOOLCHAIN_FILE` to point to `vcpkg.cmake` when configuring HDF5)*
+  *(Make sure to set `CMAKE_TOOLCHAIN_FILE` to point to
+  `<vcpkg_root>/scripts/buildsystems/vcpkg.cmake` when configuring HDF5, where `<vcpkg_root>` is the
+  directory where vcpkg is installed)*
 
 * **MacOS:**
   ```bash
@@ -46,7 +52,11 @@ HDF5 installs this library in the following ways in CI testing.
 <a id="section-iii"></a>
 ## III. Building the aws-c-s3 library from source
 
-If you are unable to obtain the `aws-c-s3` library from a package manager or other distribution method, the library may also be built from source code. The following instructions have been reproduced and slightly modified from the `aws-c-s3` repository and may be out of date; be sure to check [https://github.com/awslabs/aws-c-s3](https://github.com/awslabs/aws-c-s3) for the latest build instructions.
+If you are unable to obtain the `aws-c-s3` library from a package manager or other distribution
+method, the library may also be built from source code. The following instructions have been
+reproduced and slightly modified from the `aws-c-s3` repository and may be out of date; be sure to
+check [https://github.com/awslabs/aws-c-s3](https://github.com/awslabs/aws-c-s3) for the latest
+build instructions.
 
 ### 1. Obtain the source code for aws-c-s3 and its dependencies
 
@@ -71,7 +81,7 @@ git clone https://github.com/awslabs/aws-c-s3.git
 
 ### 2. Build `aws-c-s3` and its dependencies
 
-> **Note:** This build process intends for `<install-path>` to be the same directory for all commands. `--parallel <num-jobs>` is used to speed up the build process by building with `<num-jobs>` concurrent processes, and can be omitted if desired.
+> **Note:** This build process intends for `<aws-c-s3-install-path>` to be the same directory for all commands. `--parallel <num-jobs>` is used to speed up the build process by building with `<num-jobs>` concurrent processes, and can be omitted if desired.
 
 ```bash
 # ==========================================
@@ -79,11 +89,11 @@ git clone https://github.com/awslabs/aws-c-s3.git
 # ==========================================
 
 # Build aws-lc:
-cmake -S aws-lc -B aws-lc/build -DCMAKE_INSTALL_PREFIX=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-lc -B aws-lc/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-lc/build --target install --parallel <num-jobs>
 
 # Build s2n-tls:
-cmake -S s2n-tls -B s2n-tls/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S s2n-tls -B s2n-tls/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build s2n-tls/build --target install --parallel <num-jobs>
 
 # ==========================================
@@ -91,39 +101,39 @@ cmake --build s2n-tls/build --target install --parallel <num-jobs>
 # ==========================================
 
 # Build aws-c-common:
-cmake -S aws-c-common -B aws-c-common/build -DCMAKE_INSTALL_PREFIX=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-common -B aws-c-common/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-common/build --target install --parallel <num-jobs>
 
 # Build aws-checksums:
-cmake -S aws-checksums -B aws-checksums/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-checksums -B aws-checksums/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-checksums/build --target install --parallel <num-jobs>
 
 # Build aws-c-cal:
-cmake -S aws-c-cal -B aws-c-cal/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-cal -B aws-c-cal/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-cal/build --target install --parallel <num-jobs>
 
 # Build aws-c-io:
-cmake -S aws-c-io -B aws-c-io/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-io -B aws-c-io/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-io/build --target install --parallel <num-jobs>
 
 # Build aws-c-compression:
-cmake -S aws-c-compression -B aws-c-compression/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-compression -B aws-c-compression/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-compression/build --target install --parallel <num-jobs>
 
 # Build aws-c-http:
-cmake -S aws-c-http -B aws-c-http/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-http -B aws-c-http/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-http/build --target install --parallel <num-jobs>
 
 # Build aws-c-sdkutils:
-cmake -S aws-c-sdkutils -B aws-c-sdkutils/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-sdkutils -B aws-c-sdkutils/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-sdkutils/build --target install --parallel <num-jobs>
 
 # Build aws-c-auth:
-cmake -S aws-c-auth -B aws-c-auth/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-auth -B aws-c-auth/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-auth/build --target install --parallel <num-jobs>
 
 # Build aws-c-s3:
-cmake -S aws-c-s3 -B aws-c-s3/build -DCMAKE_INSTALL_PREFIX=<install-path> -DCMAKE_PREFIX_PATH=<install-path> -DBUILD_SHARED_LIBS=1
+cmake -S aws-c-s3 -B aws-c-s3/build -DCMAKE_INSTALL_PREFIX=<aws-c-s3-install-path> -DCMAKE_PREFIX_PATH=<aws-c-s3-install-path> -DBUILD_SHARED_LIBS=1
 cmake --build aws-c-s3/build --target install --parallel <num-jobs>
 ```
 
@@ -136,26 +146,32 @@ cmake --build aws-c-s3/build --target install --parallel <num-jobs>
 <a id="section-iv"></a>
 ## IV. Building HDF5 with the ROS3 VFD enabled
 
-HDF5 uses CMake's `find_package()` mechanism to locate the `aws-c-s3` library, so as long as it is installed to a standard location, the CMake option `HDF5_ENABLE_ROS3_VFD=ON` simply needs to be passed when configuring HDF5 in order to enable the ROS3 VFD, as in:
+HDF5 uses CMake's `find_package()` mechanism to locate the `aws-c-s3` library, so as long as it is
+installed to a standard location, the CMake option `HDF5_ENABLE_ROS3_VFD=ON` simply needs to be passed
+when configuring HDF5 in order to enable the ROS3 VFD, as in:
 
 ```bash
 cmake -DHDF5_ENABLE_ROS3_VFD=ON ..
 ```
 
-If the `aws-c-s3` library is installed to a non-standard location, the environment variable `CMAKE_PREFIX_PATH` should be set to that path when configuring HDF5, as in:
+If the `aws-c-s3` library is installed to a non-standard location, the environment variable
+`CMAKE_PREFIX_PATH` should be set to that path when configuring HDF5, as in:
 
 ```bash
-CMAKE_PREFIX_PATH=<install-path> cmake -DHDF5_ENABLE_ROS3_VFD=ON ..
+CMAKE_PREFIX_PATH=<aws-c-s3-install-path> cmake -DHDF5_ENABLE_ROS3_VFD=ON ..
 ```
 
-Refer to [INSTALL_CMake.md](./INSTALL_CMake.md) for more general instructions on building HDF5 with CMake.
+Refer to [INSTALL.md](./INSTALL.md) for more general instructions on building HDF5 with CMake.
 
 ---
 
 <a id="section-v"></a>
 ## V. Testing the ROS3 VFD
 
-The ROS3 VFD is tested using a combination of docker, s3proxy and the AWS CLI. If the `docker` and `aws` executables are available in standard locations which CMake can find and the docker daemon is running, the ROS3 VFD tests can be enabled by passing the CMake option `HDF5_ENABLE_ROS3_VFD_DOCKER_PROXY=ON`, as in:
+The ROS3 VFD is tested using a combination of docker, s3proxy and the AWS CLI. If the `docker` and
+`aws` executables are available in standard locations which CMake can find and the docker daemon is
+running, the ROS3 VFD tests can be enabled by passing the CMake option
+`HDF5_ENABLE_ROS3_VFD_DOCKER_PROXY=ON`, as in:
 
 ```bash
 cmake -DHDF5_ENABLE_ROS3_VFD=ON -DHDF5_ENABLE_ROS3_VFD_DOCKER_PROXY=ON ..
@@ -167,4 +183,7 @@ If everything configured correctly, the ROS3 VFD tests can be run with:
 ctest -R "S3TEST" -VV .
 ```
 
-These tests are separated into different groups based on the particular functionality being tested. For each group of tests, the CMake logic will bring up s3proxy, create a testing bucket and populate that bucket with any testing files needed, run all of the tests for the testing group and then bring down s3proxy.
+These tests are separated into different groups based on the particular functionality being tested.
+For each group of tests, the CMake logic will bring up s3proxy, create a testing bucket and populate
+that bucket with any testing files needed, run all of the tests for the testing group and then bring
+down s3proxy.

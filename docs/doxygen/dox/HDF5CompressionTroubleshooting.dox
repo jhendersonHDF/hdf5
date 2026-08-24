@@ -83,8 +83,9 @@ With CMake both libraries have to be explicitly enabled. The source code distrib
 Users can overwrite the defaults by using
  -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_ZLIB_SUPPORT:BOOL=OFF
 with the “cmake –C” command. See the
-<a href="https://\SRCURL/docs/INSTALL_CMake.md">INSTALL_CMake.md</a> file
-under the docs directory in the HDF5 source distribution.
+<a href="https://\SRCURL/docs/INSTALL.md">INSTALL.md</a> and
+<a href="https://\SRCURL/docs/INSTALL_filters.md">INSTALL_filters.md</a>
+files under the docs directory in the HDF5 source distribution.
 
 If compression is not requested or found at configuration time, the compression method is not
 registered with the library and cannot be applied when data is written or read. For example, the
@@ -260,7 +261,7 @@ can be used by developers programmatically to determine if a filter was configur
 
 After using <code>find-package(HDF5)</code> \b CMake can test the setting of these variables as shown below:
 \code
-    find_package (HDF5 NAMES hdf5 COMPONENTS C)
+    find_package (HDF5 CONFIG COMPONENTS C)
 
     if (HDF5_ENABLE_ZLIB_SUPPORT)
       message(STATUS "gzip filter is available.")

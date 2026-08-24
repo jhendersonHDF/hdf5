@@ -12,6 +12,14 @@ For a quick introduction to HDF5 see the following:
 <table>
 <tr>
 <td style="background-color:#F5F5F5">
+<a href="https://github.com/HDFGroup/hdf5/blob/develop/docs/INSTALL.md">Installation instructions</a>
+</td>
+<td>
+Instructions for installing HDF5
+</td>
+</tr>
+<tr>
+<td style="background-color:#F5F5F5">
 @ref IntroHDF5
 </td>
 <td>

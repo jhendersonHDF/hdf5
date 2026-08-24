@@ -161,15 +161,9 @@ mark_as_advanced (HDF5_EXTERNAL_LIB_SUFFIX)
 string (TIMESTAMP CONFIG_DATE "%Y-%m-%d")
 
 #-----------------------------------------------------------------------------
-# Allow Visual Studio solution directories
+# Provide a way to turn OFF the FOLDER organization feature for IDEs.
 #-----------------------------------------------------------------------------
-# Provide a way for Visual Studio Express users to turn OFF the new FOLDER
-# organization feature. Default to ON for non-Express users. Express users must
-# explicitly turn off this option to build HDF5 in the Express IDE...
-#
-if (HDF5_USE_FOLDERS)
-  set_property (GLOBAL PROPERTY USE_FOLDERS ON)
-endif ()
+set_property (GLOBAL PROPERTY USE_FOLDERS ${HDF5_USE_FOLDERS})
 
 #-----------------------------------------------------------------------------
 # Set the core names of all the libraries CORENAME is the base library name
@@ -280,6 +274,7 @@ set (HDF5_JAVA_JTEST_LIB_TARGET   "${HDF5_JAVA_JTEST_LIB_CORENAME}")
 # Define some CMake variables for use later in the project
 #-----------------------------------------------------------------------------
 set (HDF_CONFIG_DIR            ${HDF5_SOURCE_DIR}/config)
+set (HDF_CONFIG_INSTALL_DIR    ${HDF5_SOURCE_DIR}/config/install)
 set (HDF_RESOURCES_DIR         ${HDF5_SOURCE_DIR}/config/cmake)
 set (HDF5_SRC_DIR              ${HDF5_SOURCE_DIR}/src)
 set (HDF5_TEST_SRC_DIR         ${HDF5_SOURCE_DIR}/test)
@@ -309,6 +304,7 @@ set (HDF5_JAVA_LOGGING_SIMPLE_JAR  ${HDF5_SOURCE_DIR}/java/lib/ext/slf4j-simple-
 set (HDF5_JAVA_JUNIT_JAR           ${HDF5_JAVA_LIB_DIR}/org.junit.jar CACHE FILEPATH "Path to JUnit jar")
 set (HDF5_JAVA_HAMCREST_JAR        ${HDF5_JAVA_LIB_DIR}/org.hamcrest.jar CACHE FILEPATH "Path to Hamcrest jar")
 set (HDF5_DOCS_DIR                 ${HDF5_SOURCE_DIR}/docs)
+set (HDF5_RELEASE_DOCS_DIR         ${HDF5_SOURCE_DIR}/release_docs)
 set (HDF5_DOXYGEN_DIR              ${HDF5_DOCS_DIR}/doxygen)
 
 set (HDF5_SRC_INCLUDE_DIRS ${HDF5_SRC_DIR})

@@ -2,7 +2,7 @@
 
 The tables below document the CMake options that can be set to control how HDF5 is built. Options are typically set by passing them in the form of `-D<OPTION>=<VALUE>` when configuring HDF5. For example, `-DHDF5_BUILD_FORTRAN=ON` will enable building of the HDF5 Fortran wrappers. See [the CMake documentation](https://cmake.org/cmake/help/latest/command/set.html#set-cache-entry) for a short description of option types and their associated values.
 
-Options settings for typical HDF5 configurations can be found in the [cacheinit.cmake](../config/cmake/cacheinit.cmake) and [CMakePresets.json](../CMakePresets.json) files. 
+Options settings for typical HDF5 configurations can be found in the [cacheinit.cmake](../config/cmake/cacheinit.cmake) and [CMakePresets.json](../CMakePresets.json) files.
 
 ---
 
@@ -35,6 +35,7 @@ Options settings for typical HDF5 configurations can be found in the [cacheinit.
 * [Sanitizer, code coverage and formatting options](#sanitizer-code-coverage-and-formatting-options)
 * [Deprecated options](#deprecated-options)
 * [Unsupported option combinations](#unsupported-option-combinations)
+* [Mapping between Autotools and CMake options](#mapping-between-autotools-and-cmake-options)
 
 ---
 
@@ -45,7 +46,8 @@ These are some common options that come from CMake itself and are not specific t
 | CMake option | Type | Default | Description |
 |:-------------|:-----|:--------|:------------|
 | `CMAKE_INSTALL_PREFIX` | `STRING` | Varies by platform | HDF5 installation directory prefix. See [CMAKE_INSTALL_PREFIX](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html). |
-| `CMAKE_BUILD_TYPE` | `STRING` | `Release` | HDF5 build type. See [CMAKE_BUILD_TYPE](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html). Valid values are `Release`, `Debug`, `RelWithDebInfo`, `MinSizeRel` and `Developer`. |
+| `CMAKE_BUILD_TYPE` | `STRING` | `Release` | HDF5 build type - only used when HDF5 is configured to use a single-configuration CMake generator. See [CMAKE_BUILD_TYPE](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html). Valid values are `Release`, `Debug`, `RelWithDebInfo`, `MinSizeRel` and `Developer`. Debug symbols are enabled with configuration selections `Debug`, `RelWithDebInfo` and `Developer`. The difference between `Debug` and `RelWithDebInfo` configurations is that `RelWithDebInfo` optimizes the code similar to Release. It produces fully optimized code, but also creates the symbol table and the debug metadata to give the debugger input to map the execution back to the original code. `RelwithDebInfo` configuration should not affect the performance when the code is run without a debugger attached. |
+| [CMAKE_&lt;LANG&gt;_FLAGS](https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html) | `STRING` | Varies | Compiler flags for language `<LANG>`. |
 
 ## General options
 
@@ -231,7 +233,7 @@ These are options which control how HDF5 VOL connectors get built when building 
 
 ## Data filters options
 
-These are options specific to HDF5 data filters. The options are given a brief overview here but are covered in more detail in [INSTALL_Filters.md](./INSTALL_Filters.md).
+These are options specific to HDF5 data filters. The options are given a brief overview here but are covered in more detail in [INSTALL_filters.md](./INSTALL_filters.md).
 
 ### General options
 <a name="general_filter_options"></a>
@@ -242,6 +244,7 @@ These are options specific to HDF5 data filters. The options are given a brief o
 | `H5_DEFAULT_PLUGINDIR` | `STRING` | `${CMAKE_INSTALL_PREFIX}/lib/plugin:/usr/local/hdf5/lib/plugin` (Unix) <br /> `${CMAKE_INSTALL_PREFIX}\lib\plugin;%ALLUSERSPROFILE%\hdf5\lib\plugin` (Windows) | Specifies the default location(s) that HDF5 will search in for data filter plugins. On Unix-like systems, paths should be separated with `:`. On Windows systems, paths should be separated with `;`. |
 
 ### ZLib(-ng) options
+<a name="zlib_filter_options"></a>
 
 | CMake option | Type | Default | Description |
 |:-------------|:-----|:--------|:------------|
@@ -265,6 +268,7 @@ These are options specific to HDF5 data filters. The options are given a brief o
 | `ZLIBNG_PACKAGE_NAME` | `STRING` | `ZLIBNG` | Specifies the package name to use when locating zlib-ng libraries with CMake's [find_package()](https://cmake.org/cmake/help/latest/command/find_package.html). Usually should be left to the default value but may need to be modified in rare circumstances. Has no effect if `ZLIB_USE_EXTERNAL` is `OFF`. |
 
 ### Libaec (szip) options
+<a name="libaec_filter_options"></a>
 
 | CMake option | Type | Default | Description |
 |:-------------|:-----|:--------|:------------|
@@ -281,6 +285,7 @@ These are options specific to HDF5 data filters. The options are given a brief o
 | `LIBAEC_PACKAGE_NAME` | `STRING` | `libaec` | Specifies the package name to use when locating libaec libraries with CMake's [find_package()](https://cmake.org/cmake/help/latest/command/find_package.html). Usually should be left to the default value but may need to be modified in rare circumstances. Has no effect if `SZIP_USE_EXTERNAL` is `OFF`. |
 
 ### HDF5 filter plugins options
+<a name="plugins_filter_options"></a>
 
 | CMake option | Type | Default | Description |
 |:-------------|:-----|:--------|:------------|
@@ -300,14 +305,14 @@ These are options which can be set for controlling how the HDF5 example programs
 | CMake option | Type | Default | Description |
 |:-------------|:-----|:--------|:------------|
 | `HDF5_BUILD_EXAMPLES` | `BOOL` | `ON` | If `ON`, enables building of the HDF5 library (C) example programs. |
-| `USE_SHARED_LIBS` | `BOOL` | `ON` | If `ON`, build the HDF5 library example programs against shared HDF5 libraries. Otherwise, use static HDF5 libraries. |
+| `H5EXAMPLE_USE_SHARED_LIBS` | `BOOL` | `ON` | If `ON`, build the HDF5 library example programs against shared HDF5 libraries. Otherwise, use static HDF5 libraries. |
 | `H5EXAMPLE_BUILD_FORTRAN` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library Fortran example programs. |
 | `H5EXAMPLE_BUILD_JAVA` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library Java example programs. |
 | `H5EXAMPLE_BUILD_CXX` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library C++ example programs. |
 | `H5EXAMPLE_BUILD_HL` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library high-level C example programs. |
 | `H5EXAMPLE_ENABLE_PARALLEL` | `BOOL` | `OFF` | If `ON`, enables building of the parallel HDF5 library example programs. |
 | `H5EXAMPLE_BUILD_PYTHON` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library Python ([h5py](https://docs.h5py.org/en/stable/)) example programs. Python3 support must be available. |
-| `H5EXAMPLE_BUILD_FILTERS` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library filter plugins example programs. `USE_SHARED_LIBS` must be `ON` and shared HDF5 libraries must be available. |
+| `H5EXAMPLE_BUILD_FILTERS` | `BOOL` | `OFF` | If `ON`, enables building of the HDF5 library filter plugins example programs. `H5EXAMPLE_USE_SHARED_LIBS` must be `ON` and shared HDF5 libraries must be available. |
 | `H5EXAMPLE_BUILD_TESTING` | `BOOL` | `OFF` | If `ON`, enables testing of the HDF5 library example programs. |
 | `H5EXAMPLE_USE_200_API` | `BOOL` | `OFF` | If `ON`, compile the HDF5 library examples programs using the HDF5 2.0.0 API. |
 | `H5EXAMPLE_USE_114_API` | `BOOL` | `OFF` | If `ON`, compile the HDF5 library examples programs using the HDF5 1.14 API. |
@@ -350,7 +355,7 @@ These are options which control how HDF5 testing is built and executed.
 | `HDF_TEST_EXPRESS` | `STRING` | `3` | Specifies how exhaustive HDF5 testing should be, with smaller values causing more exhaustive testing to be performed. Valid values are `0`, `1`, `2`, `3`, where `0` means to perform exhaustive testing and `3` means to perform the quickest testing. |
 | `CTEST_TEST_TIMEOUT` | `STRING` | `1200` | Specifies the maximum amount of time (in seconds) before a test program will be terminated due to a timeout. If modified, `DART_TESTING_TIMEOUT` should be updated as well. |
 | `DART_TESTING_TIMEOUT` | `STRING` | `1200` | Specifies the maximum amount of time (in seconds) before a test program will be terminated due to a timeout. If modified, `CTEST_TEST_TIMEOUT` should be updated as well. |
-| `HDF5_DISABLE_TESTS_REGEX` | `STRING` | `""` (empty string) | Specifies a regular expression string which can be used to disable specific HDF5 tests with names matching the specified string. For general naming patterns of HDF5 tests, see [INSTALL_CMake.md](./INSTALL_CMake.md#section-xiii). |
+| `HDF5_DISABLE_TESTS_REGEX` | `STRING` | `""` (empty string) | Specifies a regular expression string which can be used to disable specific HDF5 tests with names matching the specified string. For general naming patterns of HDF5 tests, see [TESTING.md](./TESTING.md). |
 | `HDF5_TEST_SERIAL` | `BOOL` | `ON` | If `ON`, enables testing of HDF5's serial (i.e., non-parallel) tests. |
 | `HDF5_TEST_PARALLEL` | `BOOL` | `ON` (if `HDF5_ENABLE_PARALLEL` is `ON`) | If `ON`, enables testing of HDF5's parallel tests. |
 | `HDF5_TEST_TOOLS` | `BOOL` | `ON` (if `HDF5_BUILD_TOOLS` is `ON`) | If `ON`, enables testing of HDF5's tool programs. |
@@ -457,3 +462,72 @@ Some HDF5 feature configuration options are incompatible with each other and wil
     - `HDF5_BUILD_CPP_LIB`
 
 - The multi-thread concurrency (`HDF5_ENABLE_CONCURRENCY`) and thread-safe (`HDF5_ENABLE_THREADSAFE`) features are mutually exclusive, only one or the other may be enabled.
+
+## Mapping between Autotools and CMake options
+
+The table below shows the equivalent CMake build options that match those from Autotools builds for
+older HDF5 releases.
+
+| Autotools Build Options | CMake Build Options | Notes |
+| ------- |  ------- | ------------ |
+| warnings-as-errors[default=no] | HDF5_ENABLE_WARNINGS_AS_ERRORS "Interpret some warnings as errors" [OFF] |  |
+| build-mode[--enable-build-mode=(debug\|production\|clean)] | CMAKE_BUILD_TYPE "Debug" "Release" "RelWithDebInfo" "MinSizeRel" "Developer" [Release] |  |
+| unsupported[Allow unsupported combinations of configure options] | HDF5_ALLOW_UNSUPPORTED "Allow unsupported combinations of configure options" [OFF] |  |
+| nonstandard-features[Enable support for non-standard programming language features[default=yes]] | HDF5_ENABLE_NONSTANDARD_FEATURES "Enable support for non-standard programming language features" [ON] |  |
+| nonstandard-feature-float16[Enable support for _Float16 C datatype [default=yes]] | HDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16 "Enable support for _Float16 C datatype" [${HDF5_ENABLE_NONSTANDARD_FEATURES}] | if (HDF5_ENABLE_NONSTANDARD_FEATURES) |
+| static_exec[Install only statically linked executables [default=no]] | BUILD_STATIC_EXECS "Build Static Executables" [OFF] |  |
+| sharedlib-rpath[Disable use of the '=Wl,-rpath' linker option] |  |  |
+| zlib[Use zlib library for external deflate I/O filter [default=yes]] | HDF5_ENABLE_ZLIB_SUPPORT "Enable Zlib Filters" [OFF] |  |
+| szlib[Use szlib library for external szlib I/O filter [default=yes]] | HDF5_ENABLE_SZIP_SUPPORT "Use SZip Filter" [OFF] |  |
+| default-api-version[Specify default release version of public symbols [default=v200]] | HDF5_DEFAULT_API_VERSION "v200" CACHE STRING "Enable v2.0 API (v16, v18, v110, v112, v114, v200)" [v200] |  |
+| default-plugindir[--with-default-plugindir=location], [Specify default location for plugins [default="/usr/local/hdf5/lib/plugin"]] | H5_DEFAULT_PLUGINDIR “Define the default plugins path” | if (WINDOWS)<br>H5_DEFAULT_PLUGINDIR "%ALLUSERSPROFILE%/hdf5/lib/plugin"<br>else ()<br>H5_DEFAULT_PLUGINDIR "/usr/local/hdf5/lib/plugin"<br>endif () |
+| **Autotools Features Options** | **CMake Features Options** | **Notes** |
+| dimension-scales-with-new-ref[Use new references when creating dimension scales. [default=no]] | HDF5_DIMENSION_SCALES_NEW_REF "Use new-style references with dimension scale APIs" [OFF] |  |
+| map-api[Build the map API (H5M). [default=no]] | HDF5_ENABLE_MAP_API "Build the map API" [OFF] |  |
+| subfiling-vfd[Build the subfiling I/O virtual file driver (VFD). Requires --enable-parallel. [default=no]] | HDF5_ENABLE_SUBFILING_VFD "Build Parallel HDF5 Subfiling VFD" [OFF] | if (HDF5_BUILD_UTILS) |
+| direct-vfd[Build the direct I/O virtual file driver (VFD). [default=no]] | HDF5_ENABLE_DIRECT_VFD "Build the Direct I/O Virtual File Driver" [OFF] |  |
+| mirror-vfd[Build the socket-based Mirror virtual file driver (VFD). [default=no]] | HDF5_ENABLE_MIRROR_VFD "Build the Mirror Virtual File Driver" [OFF] | if (HDF5_BUILD_UTILS) |
+| ros3-vfd[Build the Read-Only S3 virtual file driver (VFD). [default=no]] | HDF5_ENABLE_ROS3_VFD "Build the ROS3 Virtual File Driver" [OFF] |  |
+| libhdfs[Provide libhdfs library to enable HDFS virtual file driver (VFD) [default=no]] | HDF5_ENABLE_HDFS "Enable HDFS" [OFF] |  |
+| threads[Enable threads capability. A prerequisite for enabling threadsafe API calls.  [default=yes] | HDF5_THREADS_ENABLED "Enable thread support" [ON] |  |
+| threadsafe[Enable thread-safe capability. Not compatible with the high-level library, Fortran, or C++ wrappers.  [default=no]] | HDF5_ENABLE_THREADSAFE "Enable Threadsafety" [OFF] |  |
+| file-locking[Sets the default for whether or not to use file locking when opening files. [default=best-effort]] | HDF5_USE_FILE_LOCKING "Use file locking by default (mainly for SWMR)" [ON] | HDF5_IGNORE_DISABLED_FILE_LOCKS "Ignore file locks when disabled on file system" [ON] |
+| enable-concurrency[Support for concurrent multithreaded operation of supported API routines [default=no]] | HDF5_ENABLE_CONCURRENCY "Enable multi-threaded concurrency" [OFF] | This option also provides threadsafe execution of all other, non-concurrent operations. |
+| **Autotools Language Options** | **CMake Language Options** | **Notes** |
+| fortran[Compile the Fortran interface [default=no]] | HDF5_BUILD_FORTRAN "Build FORTRAN support" [OFF] |  |
+| fmoddir[--with-fmoddir=DIR], [Fortran module install directory] | HDF5_INSTALL_MODULE_DIR=$<INSTALL_PREFIX>/mod |  |
+| cxx[Compile the C++ interface [default=no]] | HDF5_BUILD_CPP_LIB "Build HDF5 C++ Library" [OFF] |  |
+| hl[Enable the high-level library. [default=yes (unless build mode = clean)] | HDF5_BUILD_HL_LIB "Build HIGH Level HDF5 Library" [ON] |  |
+| java[Compile the Java JNI interface [default=no]] | HDF5_BUILD_JAVA "Build JAVA support" [OFF] |  |
+| parallel[Search for MPI-IO and MPI support files] | HDF5_ENABLE_PARALLEL "Enable parallel build (requires MPI)" [OFF] |  |
+| **Autotools Test Options** | **CMake Test Options** | **Notes** |
+| tests[Compile the HDF5 tests [default=yes]] | BUILD_TESTING "Build HDF5 Unit Testing" [ON] |  |
+| test-express[Set HDF5 testing intensity level (0-3) [0 = exhaustive testing; 3 = quicker testing; default=3] | HDF_TEST_EXPRESS "Control testing framework (0-3)" ["3"] |  |
+| tools[Compile the HDF5 tools [default=yes]] | HDF5_BUILD_TOOLS "Build HDF5 Tools" [ON] |  |
+| parallel-tools[Enable building parallel tools. [default=no]] | HDF5_BUILD_PARALLEL_TOOLS  "Build MPI-enabled HDF5 tools" [OFF] |  |
+| **Autotools Doc Options** | **CMake Doc Options** | **Notes** |
+| doxygen[Compile the HDF5 doxygen files [default=no]] | HDF5_BUILD_DOC "Build documentation" [OFF] |  |
+| doxygen-errors[Error on HDF5 doxygen warnings [default=no]] | HDF5_ENABLE_DOXY_WARNINGS "Enable fail if doxygen parsing has warnings." [OFF] |  |
+| **Autotools Dev Options** | **CMake Dev Options** | **Notes** |
+| sanitize-checks[default=none] | HDF5_USE_SANITIZER ["Compile with a sanitizer. Options are: Address, Memory, MemoryWithOrigins, Undefined, Thread, Leak, 'Address;Undefined', CFI"] | Requires HDF5_ENABLE_SANITIZERS "execute the Clang sanitizer" [OFF] |
+| asserts[Determines whether NDEBUG is defined or not, which controls assertions. [default=yes if debug build, otherwise no]] | HDF5_ENABLE_ASSERTS "Determines whether NDEBUG is defined to control assertions." [OFF] |  |
+| developer-warnings[Determines whether developer warnings will be emitted. [default=no]] | HDF5_ENABLE_DEV_WARNINGS "Enable HDF5 developer group warnings" [OFF |  |
+| show-all-warnings[Enable showing all compiler warnings (for developer debugging). [default=no]] | HDF5_SHOW_ALL_WARNINGS "Show all warnings (i.e. not suppress "noisy" ones internally)" [OFF] |  |
+| profiling[Enable profiling flags (e.g.: -pg). [default=no]] | HDF5_ENABLE_PROFILING "Enable profiling flags independently from the build mode." [OFF] |  |
+| optimization[Enable optimization flags/settings [default depends on build mode: debug=debug, production=high, clean=none]] | HDF5_ENABLE_OPTIMIZATION "Enable optimization flags/settings independently from the build mode" [OFF] |  |
+| diags[Allow default enhanced diagnostics to the build. [default=no]] | HDF5_ENABLE_BUILD_DIAGS "Enable color and URL extended diagnostic messages" [OFF] |  |
+| symbols[Add debug symbols to the library (e.g.: build with -g). [default=yes if debug build, otherwise no]] | HDF5_ENABLE_SYMBOLS "Add debug symbols to the library independent of the build mode and optimization level." [OFF] |  |
+| internal-debug[Enable extra debugging output on HDF5 library errors. [default=all if debug build, otherwise none]] | HDF5_ENABLE_DEBUG_APIS "Turn on extra debug output in all packages" [OFF] |  |
+| trace[Enable HDF5 API tracing capability. [default=yes if debug build, otherwise no]] | HDF5_ENABLE_ASSERTS "Determines whether NDEBUG is defined to control assertions (OFF NO YES)" [OFF] |  |
+| using-memchecker[Enable this option if a memory allocation and/or bounds checking tool will be used on the HDF5 library. [default=no]] | HDF5_ENABLE_USING_MEMCHECKER "Indicate that a memory checker is used" [OFF] |  |
+| instrument[Enable library instrumentation of optimization tracing (only used with parallel builds). [default=yes if a parallel debug build, otherwise no]] | HDF5_ENABLE_INSTRUMENT "Instrument The library" [OFF] |  |
+| dconv-exception[Check exception handling functions during data conversions [default=yes]] | HDF5_WANT_DCONV_EXCEPTION "exception handling functions is checked during data conversions" [ON] |  |
+| dconv-accuracy[Guarantee data accuracy during data conversions [default=yes]] | HDF5_WANT_DATA_ACCURACY "IF data accuracy is guaranteed during data conversions" [ON] |  |
+| deprecated-symbols[Enable deprecated public API symbols. [default=yes (unless build mode = clean)]] | HDF5_ENABLE_DEPRECATED_SYMBOLS "Enable deprecated public API symbols" [ON] |  |
+| strict-format-checks[Enable strict file format checks. [default=yes if debug build, otherwise no]] | HDF5_STRICT_FORMAT_CHECKS "Whether to perform strict file format checks" [OFF] |  |
+| preadwrite[Enable using pread/pwrite instead of read/write in sec2/log/core VFDs. [default=yes if pread/pwrite are present]] | HDF5_ENABLE_PREADWRITE "Use pread/pwrite in sec2/log/core VFDs in place of read/write (when available)" [ON] |  |
+| embedded-libinfo[Enable embedded library information [default=yes]] | HDF5_ENABLE_EMBEDDED_LIBINFO "Embed library info into executables" [ON] |  |
+| **Autotools Options** | **CMake Unused** | **Notes** |
+| examplesdir[--with-examplesdir=location], [Specify path for examples [default="DATAROOTDIR/hdf5_examples"]] |  |  |
+| libmfu[--with-libmfu=DIR], [Use the libmfu library [default=no]] |  |  |
+| pthread[--with-pthread=DIR][Specify alternative path to Pthreads library] | Handled by HDF5_THREADS_ENABLED |  |

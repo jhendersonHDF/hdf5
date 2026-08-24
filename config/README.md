@@ -24,8 +24,6 @@ This directory contains a few important things:
 CMake is documented in the following files in the `docs/` directory:
 
 * [INSTALL.md](../docs/INSTALL.md)
-* [INSTALL_CMake.md](../docs/INSTALL_CMake.md)
 * [USING_HDF5_CMake.md](../docs/USING_HDF5_CMake.md)
 * [USING_HDF5_VS.md](../docs/USING_HDF5_VS.md)
-* [INSTALL_Windows.md](../docs/INSTALL_Windows.md)
-* [USING_CMake_Examples.md](../docs/USING_CMake_Examples.md)
+* [USING_HDF5_Examples.md](../docs/USING_HDF5_Examples.md)

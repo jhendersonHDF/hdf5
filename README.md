@@ -27,9 +27,7 @@ tools, and services at [The HDF Group's website](https://www.hdfgroup.org/).
 
 - **New to HDF5?** Start with the [INSTALL.md](docs/INSTALL.md) guide for compilation and installation instructions.
 
-- **Ready to build?** See [INSTALL_CMake.md](docs/INSTALL_CMake.md) for CMake-based builds.
-
-- **Running on HPC?** Check out [README_HPC.md](docs/README_HPC.md) for parallel HDF5 configuration.
+- **Running on HPC?** Check out [INSTALL_HPC.md](docs/INSTALL_HPC.md) for parallel HDF5 configuration.
 
 ## Table of Contents
 
@@ -60,13 +58,11 @@ Several files in the [docs/][u4] directory provide platform-specific details:
 
 | File | Description |
 |------|-------------|
-| [INSTALL](docs/INSTALL.md) | General compilation and installation instructions (start here) |
-| [INSTALL_CMake.md](docs/INSTALL_CMake.md) | Building with CMake |
-| [README_HPC.md](docs/README_HPC.md) | Building and configuring Parallel HDF5 on HPC systems |
-| [INSTALL_Windows.md](docs/INSTALL_Windows.md) | Windows installation |
-| [INSTALL_Cygwin.md](docs/INSTALL_Cygwin.md) | Cygwin installation |
+| [INSTALL.md](docs/INSTALL.md) | General compilation and installation instructions (start here) |
+| [INSTALL_options.md](docs/INSTALL_options.md) | List of HDF5 configuration options |
+| [USING_HDF5.md](docs/USING_HDF5.md) | Using an HDF5 installation; building HDF5 applications |
 | [USING_HDF5_CMake.md](docs/USING_HDF5_CMake.md) | Building HDF5 applications with CMake |
-| [USING_CMake_Examples.md](docs/USING_CMake_Examples.md) | Building and testing HDF5 examples with CMake |
+| [USING_HDF5_Examples.md](docs/USING_HDF5_Examples.md) | Building and testing HDF5 examples with CMake |
 
 ## Help and Support
 

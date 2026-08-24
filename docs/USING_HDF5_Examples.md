@@ -192,7 +192,7 @@ The files that support building with CMake are all of the files in the `config/c
 "binaryDir": "${sourceParentDir}/build/${presetName}"
 "name": "ci-StdShar"
 "BUILD_SHARED_LIBS": "ON"
-"USE_SHARED_LIBS": "ON"
+"H5EXAMPLE_USE_SHARED_LIBS": "ON"
 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
 "H5EXAMPLE_BUILD_FORTRAN": "ON"
 "H5EXAMPLE_BUILD_CXX": "ON"

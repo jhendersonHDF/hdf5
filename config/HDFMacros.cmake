@@ -408,8 +408,8 @@ macro (HDF_README_PROPERTIES target_fortran)
   endif ()
 
   configure_file (
-      ${HDF_CONFIG_DIR}/README.md.cmake.in
-      ${CMAKE_BINARY_DIR}/README.md @ONLY
+    ${HDF_CONFIG_INSTALL_DIR}/README.md.cmake.in
+    ${CMAKE_BINARY_DIR}/README.md @ONLY
   )
 endmacro ()
 

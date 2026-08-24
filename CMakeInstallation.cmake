@@ -228,7 +228,7 @@ if (HDF5_PACK_EXAMPLES)
   )
   install (
       FILES
-          ${HDF5_DOCS_DIR}/USING_CMake_Examples.md
+          ${HDF5_DOCS_DIR}/USING_HDF5_Examples.md
       DESTINATION ${HDF5_INSTALL_DATA_DIR}
       COMPONENT hdfdocuments
   )
@@ -267,49 +267,31 @@ if (NOT HDF5_EXTERNALLY_CONFIGURED)
       DESTINATION ${HDF5_INSTALL_DATA_DIR}
       COMPONENT hdfdocuments
   )
+
+  unset (release_files)
+
   if (EXISTS "${HDF5_DOCS_DIR}" AND IS_DIRECTORY "${HDF5_DOCS_DIR}")
-    set (release_files
-        ${HDF5_DOCS_DIR}/USING_HDF5_CMake.md
-        ${HDF5_SOURCE_DIR}/release_docs/CHANGELOG.md
+    list (APPEND release_files
+      ${HDF5_DOCS_DIR}/USING_HDF5_CMake.md
     )
     if (WIN32)
-      set (release_files
-          ${release_files}
-          ${HDF5_DOCS_DIR}/USING_HDF5_VS.md
+      list (APPEND release_files
+        ${HDF5_DOCS_DIR}/USING_HDF5_VS.md
       )
     endif ()
-    if (HDF5_PACK_INSTALL_DOCS)
-      set (release_files
-          ${release_files}
-          ${HDF5_DOCS_DIR}/INSTALL_CMake.md
-          ${HDF5_SOURCE_DIR}/release_docs/HISTORY-1_8.txt
-          ${HDF5_DOCS_DIR}/INSTALL.md
-      )
-      if (WIN32)
-        set (release_files
-            ${release_files}
-            ${HDF5_DOCS_DIR}/INSTALL_Windows.md
-        )
-      endif ()
-      if (CYGWIN)
-        set (release_files
-            ${release_files}
-            ${HDF5_DOCS_DIR}/INSTALL_Cygwin.md
-        )
-      endif ()
-      if (HDF5_ENABLE_PARALLEL)
-        set (release_files
-            ${release_files}
-            ${HDF5_DOCS_DIR}/README_HPC.md
-        )
-      endif ()
-    endif ()
-    install (
-        FILES ${release_files}
-        DESTINATION ${HDF5_INSTALL_DOC_DIR}
-        COMPONENT hdfdocuments
+  endif ()
+
+  if (EXISTS "${HDF5_RELEASE_DOCS_DIR}" AND IS_DIRECTORY "${HDF5_RELEASE_DOCS_DIR}")
+    list (APPEND release_files
+      ${HDF5_RELEASE_DOCS_DIR}/CHANGELOG.md
     )
   endif ()
+
+  install (
+      FILES ${release_files}
+      DESTINATION ${HDF5_INSTALL_DOC_DIR}
+      COMPONENT hdfdocuments
+  )
 endif ()
 
 #-----------------------------------------------------------------------------
@@ -330,7 +312,7 @@ if (NOT HDF5_EXTERNALLY_CONFIGURED AND NOT HDF5_NO_PACKAGES)
   set (CPACK_PACKAGE_VERSION_MINOR "${HDF5_PACKAGE_VERSION_MINOR}")
   set (CPACK_PACKAGE_VERSION_PATCH "")
   set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-  if (EXISTS "${HDF5_SOURCE_DIR}/release_docs")
+  if (EXISTS "${HDF5_RELEASE_DOCS_DIR}")
     set (CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/release_docs/CHANGELOG.md")
     set (CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/release_docs/CHANGELOG.md")
   endif ()
