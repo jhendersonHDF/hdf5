@@ -17,10 +17,11 @@
 
 #include "H5Omodule.h" /* This source code file is part of the H5O module */
 
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
-#include "H5Opkg.h"      /* Object headers			*/
-#include "H5MMprivate.h" /* Memory management			*/
+#include "H5private.h"   /* Generic Functions                 */
+#include "H5bcursor.h"   /* Byte cursor                       */
+#include "H5Eprivate.h"  /* Error handling                    */
+#include "H5Opkg.h"      /* Object headers                    */
+#include "H5MMprivate.h" /* Memory management                 */
 
 static void  *H5O__shmesg_decode(H5F_t *f, H5O_t *open_oh, unsigned mesg_flags, unsigned *ioflags,
                                  size_t p_size, const uint8_t *p);
@@ -68,8 +69,9 @@ static void *
 H5O__shmesg_decode(H5F_t *f, H5O_t H5_ATTR_UNUSED *open_oh, unsigned H5_ATTR_UNUSED mesg_flags,
                    unsigned H5_ATTR_UNUSED *ioflags, size_t p_size, const uint8_t *p)
 {
-    H5O_shmesg_table_t *mesg;                       /* New shared message table */
-    const uint8_t      *p_end     = p + p_size - 1; /* End of the p buffer */
+    H5O_shmesg_table_t *mesg; /* New shared message table */
+    H5_bcursor_t        byte_cursor;
+    uint8_t             byte;
     void               *ret_value = NULL;
 
     FUNC_ENTER_PACKAGE
@@ -81,18 +83,20 @@ H5O__shmesg_decode(H5F_t *f, H5O_t H5_ATTR_UNUSED *open_oh, unsigned H5_ATTR_UNU
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL,
                     "memory allocation failed for shared message table message");
 
+    if (H5_bcursor_init(p, p_size, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_OHDR, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Retrieve version, table address, and number of indexes */
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    mesg->version = *p++;
+    mesg->version = byte;
 
-    if (H5_IS_BUFFER_OVERFLOW(p, H5F_sizeof_addr(f), p_end))
+    if (H5_bcursor_decode_file_addr(&byte_cursor, f, &(mesg->addr)) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    H5F_addr_decode(f, &p, &(mesg->addr));
 
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    mesg->nindexes = *p++;
+    mesg->nindexes = byte;
 
     /* Set return value */
     ret_value = (void *)mesg;
