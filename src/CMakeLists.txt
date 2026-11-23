@@ -14,6 +14,7 @@ project (HDF5_SRC C)
 set (H5_SOURCES
     ${HDF5_SRC_DIR}/H5.c
     #${HDF5_SRC_BINARY_DIR}/H5build_settings.c
+    ${HDF5_SRC_DIR}/H5bcursor.c
     ${HDF5_SRC_DIR}/H5checksum.c
     ${HDF5_SRC_DIR}/H5dbg.c
     ${HDF5_SRC_DIR}/H5mpi.c

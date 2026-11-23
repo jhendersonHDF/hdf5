@@ -28,11 +28,12 @@
 /***********/
 /* Headers */
 /***********/
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Bpkg.h"      /* B-link trees				*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
+#include "H5private.h"   /* Generic Functions                        */
+#include "H5bcursor.h"   /* Byte cursor                              */
+#include "H5Bpkg.h"      /* B-link trees                             */
+#include "H5Eprivate.h"  /* Error handling                           */
 #include "H5FLprivate.h" /* Free Lists                               */
-#include "H5MMprivate.h" /* Memory management			*/
+#include "H5MMprivate.h" /* Memory management                        */
 
 /****************/
 /* Local Macros */
@@ -124,11 +125,15 @@ H5B__cache_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATT
     H5B_t          *bt    = NULL;                     /* Pointer to the deserialized B-tree node */
     H5B_cache_ud_t *udata = (H5B_cache_ud_t *)_udata; /* User data for callback */
     H5B_shared_t   *shared;                           /* Pointer to shared B-tree info */
+    H5_bcursor_t    byte_cursor;                      /* Byte cursor for deserialization */
+    H5_bcursor_t    byte_cursor_nkeys;                /* Byte cursor for deserialization */
     const uint8_t  *image = (const uint8_t *)_image;  /* Pointer into image buffer */
-    const uint8_t  *p_end = image + len - 1;          /* End of image buffer */
+    uint16_t        tmp_u16;                          /* Used to store values during decoding */
     uint8_t        *native;                           /* Pointer to native keys */
+    uint8_t         byte;                             /* Used to store values during decoding */
     unsigned        u;                                /* Local index variable */
-    H5B_t          *ret_value = NULL;                 /* Return value */
+    int             memcmp_ret = 0;                   /* memcmp return */
+    H5B_t          *ret_value  = NULL;                /* Return value */
 
     FUNC_ENTER_PACKAGE
 
@@ -156,19 +161,30 @@ H5B__cache_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATT
     if (NULL == (bt->child = H5FL_SEQ_MALLOC(haddr_t, (size_t)shared->two_k)))
         HGOTO_ERROR(H5E_BTREE, H5E_CANTALLOC, NULL, "can't allocate buffer for child addresses");
 
-    /* Magic number */
-    if (H5_IS_BUFFER_OVERFLOW(image, H5_SIZEOF_MAGIC, p_end))
-        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    if (memcmp(image, H5B_MAGIC, (size_t)H5_SIZEOF_MAGIC) != 0)
-        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree signature");
-    image += H5_SIZEOF_MAGIC;
+    /* Initialize byte cursor */
+    if (H5_bcursor_init(image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+    if (H5_bcursor_init(bt->native, shared->sizeof_keys, &byte_cursor_nkeys) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
 
-    /* Node type and level */
-    if (H5_IS_BUFFER_OVERFLOW(image, 2, p_end))
+    /* Magic number */
+    if (H5_bcursor_memcmp(&byte_cursor, H5B_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
         HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    if (*image++ != (uint8_t)udata->type->id)
+    if (memcmp_ret != 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree signature");
+    if (H5_bcursor_skip(&byte_cursor, (size_t)H5_SIZEOF_MAGIC) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+
+    /* Node type */
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if ((H5B_subid_t)byte != udata->type->id)
         HGOTO_ERROR(H5E_BTREE, H5E_CANTLOAD, NULL, "incorrect B-tree node type");
-    bt->level = *image++;
+
+    /* Node level */
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    bt->level = byte;
 
     /* Check in case of level is corrupted, if expected level is known */
     if (udata->exp_level != H5B_UNKNOWN_NODELEVEL)
@@ -176,44 +192,44 @@ H5B__cache_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATT
             HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "level is not as expected, possibly corrupted");
 
     /* Entries used */
-    if (H5_IS_BUFFER_OVERFLOW(image, 2, p_end))
+    if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
         HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    UINT16DECODE(image, bt->nchildren);
+    bt->nchildren = tmp_u16;
 
     /* Check if bt->nchildren is greater than two_k */
     if (bt->nchildren > shared->two_k)
         HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "number of children is greater than maximum");
 
     /* Sibling pointers */
-    if (H5_IS_BUFFER_OVERFLOW(image, H5F_sizeof_addr(udata->f), p_end))
+    if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &(bt->left)) < 0)
         HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    H5F_addr_decode(udata->f, (const uint8_t **)&image, &(bt->left));
-
-    if (H5_IS_BUFFER_OVERFLOW(image, H5F_sizeof_addr(udata->f), p_end))
+    if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &(bt->right)) < 0)
         HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    H5F_addr_decode(udata->f, (const uint8_t **)&image, &(bt->right));
 
     /* Child/key pairs */
     native = bt->native;
     for (u = 0; u < bt->nchildren; u++) {
-        /* Decode native key value */
-        if (H5_IS_BUFFER_OVERFLOW(image, shared->sizeof_rkey, p_end))
+        if (!H5_bcursor_has_num_bytes(&byte_cursor_nkeys, udata->type->sizeof_nkey))
             HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-        if ((udata->type->decode)(shared, image, native) < 0)
+
+        /* Decode native key value */
+        if ((udata->type->decode)(shared, &byte_cursor, native) < 0)
             HGOTO_ERROR(H5E_BTREE, H5E_CANTDECODE, NULL, "unable to decode key");
-        image += shared->sizeof_rkey;
+
+        /* TODO: Deal with writeable byte cursor */
         native += udata->type->sizeof_nkey;
+        if (H5_bcursor_skip(&byte_cursor_nkeys, udata->type->sizeof_nkey) < 0)
+            HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Decode address value */
-        if (H5_IS_BUFFER_OVERFLOW(image, H5F_sizeof_addr(udata->f), p_end))
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, bt->child + u) < 0)
             HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, bt->child + u);
     }
 
     /* Final key */
     if (bt->nchildren > 0) {
         /* Decode native key value */
-        if ((udata->type->decode)(shared, image, native) < 0)
+        if ((udata->type->decode)(shared, &byte_cursor, native) < 0)
             HGOTO_ERROR(H5E_BTREE, H5E_CANTDECODE, NULL, "unable to decode key");
     }
 

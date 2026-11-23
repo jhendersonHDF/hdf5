@@ -23,9 +23,10 @@
 #define H5Bprivate_H
 
 /* Private headers needed by this file */
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Fprivate.h"  /* File access				*/
-#include "H5UCprivate.h" /* Reference counted object functions	*/
+#include "H5private.h"   /* Generic Functions                   */
+#include "H5bcursor.h"   /* Byte cursor                         */
+#include "H5Fprivate.h"  /* File access                         */
+#include "H5UCprivate.h" /* Reference counted object functions  */
 
 /**************************/
 /* Library Private Macros */
@@ -112,7 +113,7 @@ typedef struct H5B_class_t {
     H5B_ins_t (*remove)(H5F_t *, haddr_t, void *, bool *, void *, void *, bool *);
 
     /* encode, decode, debug key values */
-    herr_t (*decode)(const H5B_shared_t *, const uint8_t *, void *);
+    herr_t (*decode)(const H5B_shared_t *, const H5_bcursor_t *, void *);
     herr_t (*encode)(const H5B_shared_t *, uint8_t *, const void *);
     herr_t (*debug_key)(FILE *, int, int, const void *, const void *);
 } H5B_class_t;

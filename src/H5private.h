@@ -365,6 +365,15 @@
 #define H5_IS_KNOWN_BUFFER_OVERFLOW(skip, ptr, size, buffer_end)                                             \
     (skip ? false : H5_IS_BUFFER_OVERFLOW(ptr, size, buffer_end))
 
+/* TODO: DEBUG */
+#if 1
+#undef H5_IS_BUFFER_OVERFLOW
+#undef H5_IS_KNOWN_BUFFER_OVERFLOW
+#define H5_IS_BUFFER_OVERFLOW(ptr, size, buffer_end) false
+#define H5_IS_KNOWN_BUFFER_OVERFLOW(skip, ptr, size, buffer_end) false
+#endif
+/* TODO: DEBUG */
+
 /*
  * The max value for ssize_t.
  *

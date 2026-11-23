@@ -25,6 +25,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions                    */
+#include "H5bcursor.h"   /* Byte cursor                          */
 #include "H5Bprivate.h"  /* B-link trees                         */
 #include "H5Dpkg.h"      /* Datasets                             */
 #include "H5Eprivate.h"  /* Error handling                       */
@@ -104,7 +105,7 @@ static H5B_ins_t H5D__btree_insert(H5F_t *f, haddr_t addr, void *_lt_key, bool *
                                    haddr_t *new_node /*out*/);
 static H5B_ins_t H5D__btree_remove(H5F_t *f, haddr_t addr, void *_lt_key, bool *lt_key_changed, void *_udata,
                                    void *_rt_key, bool *rt_key_changed);
-static herr_t    H5D__btree_decode_key(const H5B_shared_t *shared, const uint8_t *raw, void *_key);
+static herr_t    H5D__btree_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key);
 static herr_t    H5D__btree_encode_key(const H5B_shared_t *shared, uint8_t *raw, const void *_key);
 static herr_t H5D__btree_debug_key(FILE *stream, int indent, int fwidth, const void *key, const void *udata);
 
@@ -617,17 +618,17 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5D__btree_decode_key(const H5B_shared_t *shared, const uint8_t *raw, void *_key)
+H5D__btree_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key)
 {
     const H5O_layout_chunk_t *layout;                        /* Chunk layout description */
     H5D_btree_key_t          *key = (H5D_btree_key_t *)_key; /* Pointer to decoded key */
-    hsize_t                   tmp_offset;                    /* Temporary coordinate offset, from file */
+    uint32_t                  tmp_u32;
     herr_t                    ret_value = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
     assert(shared);
-    assert(raw);
+    assert(raw_key_byte_cursor);
     assert(key);
     layout = (const H5O_layout_chunk_t *)shared->udata;
     assert(layout);
@@ -635,14 +636,25 @@ H5D__btree_decode_key(const H5B_shared_t *shared, const uint8_t *raw, void *_key
     if (layout->ndims > H5O_LAYOUT_NDIMS)
         HGOTO_ERROR(H5E_DATASET, H5E_BADVALUE, FAIL, "bad number of dimensions");
 
-    UINT32DECODE(raw, key->nbytes);
-    UINT32DECODE(raw, key->filter_mask);
+    if (H5_bcursor_decode_u32(raw_key_byte_cursor, &key->nbytes) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+    if (H5_bcursor_decode_u32(raw_key_byte_cursor, &tmp_u32) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    key->filter_mask = tmp_u32;
+
     for (unsigned u = 0; u < layout->ndims; u++) {
+        uint64_t tmp_u64;
+        hsize_t  tmp_offset;
+
         if (layout->dim[u] == 0)
             HGOTO_ERROR(H5E_DATASET, H5E_BADVALUE, FAIL, "chunk size must be > 0, dim = %u ", u);
 
         /* Retrieve coordinate offset */
-        UINT64DECODE(raw, tmp_offset);
+        if (H5_bcursor_decode_u64(raw_key_byte_cursor, &tmp_u64) < 0)
+            HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        H5_CHECKED_ASSIGN(tmp_offset, hsize_t, tmp_u64, uint64_t);
+
         if (0 != (tmp_offset % layout->dim[u]))
             HGOTO_ERROR(H5E_DATASET, H5E_BADVALUE, FAIL, "bad coordinate offset");
 
