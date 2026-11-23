@@ -79,7 +79,7 @@ static H5B_ins_t H5G__node_insert(H5F_t *f, haddr_t addr, void *_lt_key, bool *l
                                   haddr_t *new_node_p /*out*/);
 static H5B_ins_t H5G__node_remove(H5F_t *f, haddr_t addr, void *lt_key, bool *lt_key_changed, void *udata,
                                   void *rt_key, bool *rt_key_changed);
-static herr_t    H5G__node_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key);
+static herr_t    H5G__node_decode_key(const H5B_shared_t *shared, H5_bcursor_t *raw_key_byte_cursor, void *_key);
 static herr_t    H5G__node_encode_key(const H5B_shared_t *shared, uint8_t *raw, const void *_key);
 static herr_t H5G__node_debug_key(FILE *stream, int indent, int fwidth, const void *key, const void *udata);
 
@@ -152,7 +152,7 @@ H5G__node_get_shared(const H5F_t *f, const void H5_ATTR_UNUSED *_udata)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5G__node_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key)
+H5G__node_decode_key(const H5B_shared_t *shared, H5_bcursor_t *raw_key_byte_cursor, void *_key)
 {
     H5G_node_key_t *key       = (H5G_node_key_t *)_key;
     herr_t          ret_value = SUCCEED;

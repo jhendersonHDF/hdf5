@@ -105,7 +105,7 @@ static H5B_ins_t H5D__btree_insert(H5F_t *f, haddr_t addr, void *_lt_key, bool *
                                    haddr_t *new_node /*out*/);
 static H5B_ins_t H5D__btree_remove(H5F_t *f, haddr_t addr, void *_lt_key, bool *lt_key_changed, void *_udata,
                                    void *_rt_key, bool *rt_key_changed);
-static herr_t    H5D__btree_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key);
+static herr_t    H5D__btree_decode_key(const H5B_shared_t *shared, H5_bcursor_t *raw_key_byte_cursor, void *_key);
 static herr_t    H5D__btree_encode_key(const H5B_shared_t *shared, uint8_t *raw, const void *_key);
 static herr_t H5D__btree_debug_key(FILE *stream, int indent, int fwidth, const void *key, const void *udata);
 
@@ -618,7 +618,7 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5D__btree_decode_key(const H5B_shared_t *shared, const H5_bcursor_t *raw_key_byte_cursor, void *_key)
+H5D__btree_decode_key(const H5B_shared_t *shared, H5_bcursor_t *raw_key_byte_cursor, void *_key)
 {
     const H5O_layout_chunk_t *layout;                        /* Chunk layout description */
     H5D_btree_key_t          *key = (H5D_btree_key_t *)_key; /* Pointer to decoded key */

@@ -28,11 +28,12 @@
 /***********/
 /* Headers */
 /***********/
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
+#include "H5private.h"   /* Generic Functions                        */
+#include "H5bcursor.h"   /* Byte cursor                              */
+#include "H5Eprivate.h"  /* Error handling                           */
 #include "H5FLprivate.h" /* Free Lists                               */
-#include "H5Gpkg.h"      /* Groups		  		*/
-#include "H5MMprivate.h" /* Memory management			*/
+#include "H5Gpkg.h"      /* Groups                                   */
+#include "H5MMprivate.h" /* Memory management                        */
 
 /****************/
 /* Local Macros */
@@ -140,11 +141,14 @@ H5G__cache_node_get_initial_load_size(void *_udata, size_t *image_len)
 static void *
 H5G__cache_node_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATTR_UNUSED *dirty)
 {
-    H5F_t         *f         = (H5F_t *)_udata;         /* User data for callback */
-    H5G_node_t    *sym       = NULL;                    /* Symbol table node created */
-    const uint8_t *image     = (const uint8_t *)_image; /* Pointer to image to deserialize */
-    const uint8_t *image_end = image + len - 1;         /* Pointer to end of image buffer */
-    void          *ret_value = NULL;
+    H5F_t         *f   = (H5F_t *)_udata;           /* User data for callback */
+    H5G_node_t    *sym = NULL;                      /* Symbol table node created */
+    H5_bcursor_t   byte_cursor;                     /* Byte cursor for decoding */
+    const uint8_t *image = (const uint8_t *)_image; /* Pointer to image to deserialize */
+    uint16_t       tmp_u16;
+    uint8_t        byte;
+    int            memcmp_ret = 0;
+    void          *ret_value  = NULL;
 
     FUNC_ENTER_PACKAGE
 
@@ -160,31 +164,36 @@ H5G__cache_node_deserialize(const void *_image, size_t len, void *_udata, bool H
     if (NULL == (sym->entry = H5FL_SEQ_CALLOC(H5G_entry_t, (size_t)(2 * H5F_SYM_LEAF_K(f)))))
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
 
+    if (H5_bcursor_init(image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_SYM, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Magic */
-    if (H5_IS_BUFFER_OVERFLOW(image, H5_SIZEOF_MAGIC, image_end))
+    if (H5_bcursor_memcmp(&byte_cursor, H5G_NODE_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
         HGOTO_ERROR(H5E_SYM, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    if (memcmp(image, H5G_NODE_MAGIC, (size_t)H5_SIZEOF_MAGIC) != 0)
+    if (memcmp_ret != 0)
         HGOTO_ERROR(H5E_SYM, H5E_BADVALUE, NULL, "bad symbol table node signature");
-    image += H5_SIZEOF_MAGIC;
+    if (H5_bcursor_skip(&byte_cursor, (size_t)H5_SIZEOF_MAGIC) < 0)
+        HGOTO_ERROR(H5E_SYM, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Version */
-    if (H5_IS_BUFFER_OVERFLOW(image, 1, image_end))
-        HGOTO_ERROR(H5E_SYM, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    if (H5G_NODE_VERS != *image++)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (H5G_NODE_VERS != byte)
         HGOTO_ERROR(H5E_SYM, H5E_VERSION, NULL, "bad symbol table node version");
 
     /* Reserved */
-    if (H5_IS_BUFFER_OVERFLOW(image, 1, image_end))
-        HGOTO_ERROR(H5E_SYM, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    image++;
+    if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Number of symbols */
-    if (H5_IS_BUFFER_OVERFLOW(image, 2, image_end))
-        HGOTO_ERROR(H5E_SYM, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    UINT16DECODE(image, sym->nsyms);
+    if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    sym->nsyms = tmp_u16;
 
     /* Entries */
-    if (H5G__ent_decode_vec(f, &image, image_end, sym->entry, sym->nsyms) < 0)
+    /* TODO: make safer */
+    image = H5_bcursor_get_buf(&byte_cursor);
+    if (H5G__ent_decode_vec(f, &image, byte_cursor.buf_end, sym->entry, sym->nsyms) < 0)
         HGOTO_ERROR(H5E_SYM, H5E_CANTLOAD, NULL, "unable to decode symbol table entries");
 
     /* Set return value */

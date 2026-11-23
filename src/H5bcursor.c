@@ -35,6 +35,20 @@ H5_bcursor_init(const uint8_t *buf, size_t buf_size, H5_bcursor_t *byte_cursor)
 }
 
 /* TODO: docs */
+const uint8_t *
+H5_bcursor_get_buf(H5_bcursor_t *byte_cursor)
+{
+    return byte_cursor->buf_ptr;
+}
+
+/* TODO: docs */
+size_t
+H5_bcursor_get_num_bytes(H5_bcursor_t *byte_cursor)
+{
+    return byte_cursor->buf_bytes_left;
+}
+
+/* TODO: docs */
 bool
 H5_bcursor_has_num_bytes(H5_bcursor_t *byte_cursor, size_t num_bytes)
 {
