@@ -17,10 +17,11 @@
 
 #include "H5Omodule.h" /* This source code file is part of the H5O module */
 
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
-#include "H5Opkg.h"      /* Object headers			*/
-#include "H5MMprivate.h" /* Memory management			*/
+#include "H5private.h"   /* Generic Functions                  */
+#include "H5bcursor.h"   /* Byte cursor                        */
+#include "H5Eprivate.h"  /* Error handling                     */
+#include "H5Opkg.h"      /* Object headers                     */
+#include "H5MMprivate.h" /* Memory management                  */
 
 static void  *H5O__btreek_decode(H5F_t *f, H5O_t *open_oh, unsigned mesg_flags, unsigned *ioflags,
                                  size_t p_size, const uint8_t *p);
@@ -72,19 +73,24 @@ H5O__btreek_decode(H5F_t H5_ATTR_NDEBUG_UNUSED *f, H5O_t H5_ATTR_UNUSED *open_oh
                    unsigned H5_ATTR_UNUSED mesg_flags, unsigned H5_ATTR_UNUSED *ioflags, size_t p_size,
                    const uint8_t *p)
 {
-    const uint8_t *p_end     = p + p_size - 1; /* End of input buffer */
-    H5O_btreek_t  *mesg      = NULL;           /* Native message */
-    void          *ret_value = NULL;           /* Return value */
+    H5O_btreek_t  *mesg = NULL;      /* Native message */
+    H5_bcursor_t   byte_cursor;      /* Byte cursor for decoding */
+    uint16_t       tmp_u16;          /* Temporary for storing values */
+    uint8_t        byte;             /* Temporary for storing values */
+    void          *ret_value = NULL; /* Return value */
 
     FUNC_ENTER_PACKAGE
 
     assert(f);
     assert(p);
 
+    if (H5_bcursor_init(p, p_size, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_OHDR, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Version of message */
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    if (*p++ != H5O_BTREEK_VERSION)
+    if (byte != H5O_BTREEK_VERSION)
         HGOTO_ERROR(H5E_OHDR, H5E_CANTLOAD, NULL, "bad version number for message");
 
     /* Allocate space for message */
@@ -92,15 +98,15 @@ H5O__btreek_decode(H5F_t H5_ATTR_NDEBUG_UNUSED *f, H5O_t H5_ATTR_UNUSED *open_oh
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed for v1 B-tree 'K' message");
 
     /* Retrieve non-default B-tree 'K' values */
-    if (H5_IS_BUFFER_OVERFLOW(p, 2, p_end))
+    if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    UINT16DECODE(p, mesg->btree_k[H5B_CHUNK_ID]);
-    if (H5_IS_BUFFER_OVERFLOW(p, 2, p_end))
+    mesg->btree_k[H5B_CHUNK_ID] = tmp_u16;
+    if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    UINT16DECODE(p, mesg->btree_k[H5B_SNODE_ID]);
-    if (H5_IS_BUFFER_OVERFLOW(p, 2, p_end))
+    mesg->btree_k[H5B_SNODE_ID] = tmp_u16;
+    if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    UINT16DECODE(p, mesg->sym_leaf_k);
+    mesg->sym_leaf_k = tmp_u16;
 
     /* Set return value */
     ret_value = (void *)mesg;
