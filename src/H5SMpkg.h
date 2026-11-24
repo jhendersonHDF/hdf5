@@ -26,9 +26,10 @@
 #include "H5SMprivate.h" /* Shared Object Header Messages	*/
 
 /* Other private headers needed by this file */
-#include "H5ACprivate.h" /* Metadata Cache		  	*/
+#include "H5bcursor.h"   /* Byte cursor                          */
+#include "H5ACprivate.h" /* Metadata Cache                       */
 #include "H5B2private.h" /* B-trees                              */
-#include "H5HFprivate.h" /* Fractal heaps		  	*/
+#include "H5HFprivate.h" /* Fractal heaps                        */
 #include "H5FLprivate.h" /* Free Lists                           */
 
 /****************************/
@@ -239,7 +240,7 @@ H5_DLL herr_t H5SM__get_index(const H5SM_master_table_t *table, unsigned type_id
 /* Encode and decode routines, used for B-tree and cache encoding/decoding */
 H5_DLL herr_t H5SM__message_compare(const void *rec1, const void *rec2, int *result);
 H5_DLL herr_t H5SM__message_encode(uint8_t *raw, const void *native, void *ctx);
-H5_DLL herr_t H5SM__message_decode(const uint8_t *raw, void *native, void *ctx);
+H5_DLL herr_t H5SM__message_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 
 /* Routines to release data structures */
 H5_DLL herr_t H5SM__table_free(H5SM_master_table_t *table);

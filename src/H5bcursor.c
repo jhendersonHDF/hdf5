@@ -206,7 +206,7 @@ H5_bcursor_decode_u64(H5_bcursor_t *byte_cursor, uint64_t *u64_out)
     if (!enough_space)
         return FAIL;
 
-    UINT64DECODE(byte_cursor->buf_ptr, *u64_out);
+    UINT64DECODE(byte_cursor->buf_ptr, (*u64_out));
     byte_cursor->buf_bytes_left -= sizeof(uint64_t);
 
     return SUCCEED;
@@ -233,6 +233,25 @@ H5_bcursor_decode_var_u64(H5_bcursor_t *byte_cursor, size_t size, uint64_t *u64_
 
 /* TODO: docs */
 herr_t
+H5_bcursor_decode_i64(H5_bcursor_t *byte_cursor, int64_t *i64_out)
+{
+    bool enough_space;
+
+    assert(byte_cursor && byte_cursor->buf_ptr);
+    assert(i64_out);
+
+    enough_space = (sizeof(int64_t) <= byte_cursor->buf_bytes_left);
+    if (!enough_space)
+        return FAIL;
+
+    INT64DECODE(byte_cursor->buf_ptr, (*i64_out));
+    byte_cursor->buf_bytes_left -= sizeof(int64_t);
+
+    return SUCCEED;
+}
+
+/* TODO: docs */
+herr_t
 H5_bcursor_decode_file_addr(H5_bcursor_t *byte_cursor, const H5F_t *f, haddr_t *file_addr_out)
 {
     size_t file_addr_size = (size_t)H5F_sizeof_addr(f);
@@ -250,6 +269,26 @@ H5_bcursor_decode_file_addr(H5_bcursor_t *byte_cursor, const H5F_t *f, haddr_t *
     byte_cursor->buf_bytes_left -= file_addr_size;
 
     return SUCCEED;
+}
+
+/* TODO: docs */
+herr_t
+H5_bcursor_decode_file_addr_len(H5_bcursor_t *byte_cursor, size_t sizeof_addr, haddr_t *file_addr_out)
+{
+    bool enough_space;
+
+    assert(byte_cursor && byte_cursor->buf_ptr);
+    assert(file_addr_out);
+
+    enough_space = (sizeof_addr <= byte_cursor->buf_bytes_left);
+    if (!enough_space)
+        return FAIL;
+
+    H5F_addr_decode_len(sizeof_addr, &byte_cursor->buf_ptr, file_addr_out);
+    byte_cursor->buf_bytes_left -= sizeof_addr;
+
+    return SUCCEED;
+
 }
 
 /* TODO: docs */

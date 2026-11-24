@@ -63,13 +63,19 @@ H5_DLL herr_t H5_bcursor_decode_u16(H5_bcursor_t *byte_cursor, uint16_t *u16_out
 H5_DLL herr_t H5_bcursor_decode_u32(H5_bcursor_t *byte_cursor, uint32_t *u32_out);
 
 /* TODO: docs */
-H5_DLL herr_t H5_bcursor_decode_u64(H5_bcursor_t *byte_cursor, uint64_t *u32_out);
+H5_DLL herr_t H5_bcursor_decode_u64(H5_bcursor_t *byte_cursor, uint64_t *u64_out);
 
 /* TODO: docs */
 H5_DLL herr_t H5_bcursor_decode_var_u64(H5_bcursor_t *byte_cursor, size_t size, uint64_t *u64_out);
 
 /* TODO: docs */
+H5_DLL herr_t H5_bcursor_decode_i64(H5_bcursor_t *byte_cursor, int64_t *i64_out);
+
+/* TODO: docs */
 H5_DLL herr_t H5_bcursor_decode_file_addr(H5_bcursor_t *byte_cursor, const H5F_t *f, haddr_t *file_addr_out);
+
+/* TODO: docs */
+H5_DLL herr_t H5_bcursor_decode_file_addr_len(H5_bcursor_t *byte_cursor, size_t sizeof_addr, haddr_t *file_addr_out);
 
 /* TODO: docs */
 H5_DLL herr_t H5_bcursor_decode_file_hsize(H5_bcursor_t *byte_cursor, const H5F_t *f, hsize_t *file_hsize_out);

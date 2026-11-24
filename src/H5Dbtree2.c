@@ -27,6 +27,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions                    */
+#include "H5bcursor.h"   /* Byte cursor                          */
 #include "H5Dpkg.h"      /* Datasets                             */
 #include "H5FLprivate.h" /* Free Lists                           */
 #include "H5MFprivate.h" /* File space management                */
@@ -106,13 +107,13 @@ static herr_t H5D__bt2_compare(const void *rec1, const void *rec2, int *result);
 
 /* v2 B-tree class for indexing non-filtered chunked datasets */
 static herr_t H5D__bt2_unfilt_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5D__bt2_unfilt_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5D__bt2_unfilt_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5D__bt2_unfilt_debug(FILE *stream, int indent, int fwidth, const void *record,
                                     const void *u_ctx);
 
 /* v2 B-tree class for indexing filtered chunked datasets */
 static herr_t H5D__bt2_filt_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5D__bt2_filt_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5D__bt2_filt_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5D__bt2_filt_debug(FILE *stream, int indent, int fwidth, const void *record,
                                   const void *u_ctx);
 
@@ -407,25 +408,34 @@ H5D__bt2_unfilt_encode(uint8_t *raw, const void *_record, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5D__bt2_unfilt_decode(const uint8_t *raw, void *_record, void *_ctx)
+H5D__bt2_unfilt_decode(H5_bcursor_t *raw_byte_cursor, void *_record, void *_ctx)
 {
     H5D_bt2_ctx_t   *ctx    = (H5D_bt2_ctx_t *)_ctx;      /* Callback context structure */
     H5D_chunk_rec_t *record = (H5D_chunk_rec_t *)_record; /* The native record */
     unsigned         u;                                   /* Local index variable */
+    herr_t           ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &record->chunk_addr);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &record->chunk_addr) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
     record->nbytes      = ctx->chunk_size;
     record->filter_mask = 0;
-    for (u = 0; u < ctx->ndims; u++)
-        UINT64DECODE(raw, record->scaled[u]);
+    for (u = 0; u < ctx->ndims; u++) {
+        uint64_t tmp_u64;
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+        if (H5_bcursor_decode_u64(raw_byte_cursor, &tmp_u64) < 0)
+            HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        record->scaled[u] = tmp_u64;
+    }
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5D__bt2_unfilt_decode() */
 
 /*-------------------------------------------------------------------------
@@ -510,30 +520,45 @@ H5D__bt2_filt_encode(uint8_t *raw, const void *_record, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5D__bt2_filt_decode(const uint8_t *raw, void *_record, void *_ctx)
+H5D__bt2_filt_decode(H5_bcursor_t *raw_byte_cursor, void *_record, void *_ctx)
 {
     H5D_bt2_ctx_t   *ctx    = (H5D_bt2_ctx_t *)_ctx;      /* Callback context structure */
     H5D_chunk_rec_t *record = (H5D_chunk_rec_t *)_record; /* The native record */
     unsigned         u;                                   /* Local index variable */
+    uint64_t         tmp_u64;
+    herr_t           ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
     assert(record);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &record->chunk_addr);
-    UINT64DECODE_VAR(raw, record->nbytes, ctx->chunk_size_len);
-    UINT32DECODE(raw, record->filter_mask);
-    for (u = 0; u < ctx->ndims; u++)
-        UINT64DECODE(raw, record->scaled[u]);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &record->chunk_addr) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+    if (H5_bcursor_decode_var_u64(raw_byte_cursor, ctx->chunk_size_len, &tmp_u64) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    record->nbytes = tmp_u64;
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &record->filter_mask) < 0)
+        HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+    for (u = 0; u < ctx->ndims; u++) {
+        if (H5_bcursor_decode_u64(raw_byte_cursor,  &tmp_u64) < 0)
+            HGOTO_ERROR(H5E_DATASET, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        record->scaled[u] = tmp_u64;
+    }
 
     /* Sanity checks */
-    assert(H5_addr_defined(record->chunk_addr));
-    assert(0 != record->nbytes);
+    if (!H5_addr_defined(record->chunk_addr))
+        HGOTO_ERROR(H5E_DATASET, H5E_BADVALUE, FAIL, "invalid chunk address");
+    if (0 == record->nbytes)
+        HGOTO_ERROR(H5E_DATASET, H5E_BADVALUE, FAIL, "invalid chunk size");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5D__bt2_filt_decode() */
 
 /*-------------------------------------------------------------------------

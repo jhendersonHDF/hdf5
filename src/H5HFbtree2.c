@@ -29,6 +29,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions                        */
+#include "H5bcursor.h"   /* Byte cursor                              */
 #include "H5B2private.h" /* B-Trees (Version 2)                      */
 #include "H5Eprivate.h"  /* Error Handling                           */
 #include "H5Fprivate.h"  /* Files                                    */
@@ -68,7 +69,7 @@ static herr_t H5HF__huge_bt2_dst_context(void *ctx);
 static herr_t H5HF__huge_bt2_indir_store(void *native, const void *udata);
 static herr_t H5HF__huge_bt2_indir_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5HF__huge_bt2_indir_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5HF__huge_bt2_indir_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5HF__huge_bt2_indir_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5HF__huge_bt2_indir_debug(FILE *stream, int indent, int fwidth, const void *record,
                                          const void *_udata);
 
@@ -76,7 +77,7 @@ static herr_t H5HF__huge_bt2_indir_debug(FILE *stream, int indent, int fwidth, c
 static herr_t H5HF__huge_bt2_filt_indir_store(void *native, const void *udata);
 static herr_t H5HF__huge_bt2_filt_indir_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5HF__huge_bt2_filt_indir_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5HF__huge_bt2_filt_indir_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5HF__huge_bt2_filt_indir_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5HF__huge_bt2_filt_indir_debug(FILE *stream, int indent, int fwidth, const void *record,
                                               const void *_udata);
 
@@ -84,7 +85,7 @@ static herr_t H5HF__huge_bt2_filt_indir_debug(FILE *stream, int indent, int fwid
 static herr_t H5HF__huge_bt2_dir_store(void *native, const void *udata);
 static herr_t H5HF__huge_bt2_dir_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5HF__huge_bt2_dir_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5HF__huge_bt2_dir_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5HF__huge_bt2_dir_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5HF__huge_bt2_dir_debug(FILE *stream, int indent, int fwidth, const void *record,
                                        const void *_udata);
 
@@ -92,7 +93,7 @@ static herr_t H5HF__huge_bt2_dir_debug(FILE *stream, int indent, int fwidth, con
 static herr_t H5HF__huge_bt2_filt_dir_store(void *native, const void *udata);
 static herr_t H5HF__huge_bt2_filt_dir_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5HF__huge_bt2_filt_dir_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5HF__huge_bt2_filt_dir_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5HF__huge_bt2_filt_dir_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5HF__huge_bt2_filt_dir_debug(FILE *stream, int indent, int fwidth, const void *record,
                                             const void *_udata);
 
@@ -371,22 +372,32 @@ H5HF__huge_bt2_indir_encode(uint8_t *raw, const void *_nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5HF__huge_bt2_indir_decode(const uint8_t *raw, void *_nrecord, void *_ctx)
+H5HF__huge_bt2_indir_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void *_ctx)
 {
     H5HF_huge_bt2_ctx_t       *ctx     = (H5HF_huge_bt2_ctx_t *)_ctx; /* Callback context structure */
     H5HF_huge_bt2_indir_rec_t *nrecord = (H5HF_huge_bt2_indir_rec_t *)_nrecord;
+    size_t                     tmp_size;
+    herr_t                     ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &nrecord->addr);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->len, ctx->sizeof_size);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->id, ctx->sizeof_size);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &nrecord->addr) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->len = tmp_size;
+
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->id = tmp_size;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5HF__huge_bt2_indir_decode() */
 
 /*-------------------------------------------------------------------------
@@ -550,24 +561,41 @@ H5HF__huge_bt2_filt_indir_encode(uint8_t *raw, const void *_nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5HF__huge_bt2_filt_indir_decode(const uint8_t *raw, void *_nrecord, void *_ctx)
+H5HF__huge_bt2_filt_indir_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void *_ctx)
 {
     H5HF_huge_bt2_ctx_t            *ctx     = (H5HF_huge_bt2_ctx_t *)_ctx; /* Callback context structure */
     H5HF_huge_bt2_filt_indir_rec_t *nrecord = (H5HF_huge_bt2_filt_indir_rec_t *)_nrecord;
+    uint32_t                        tmp_u32;
+    size_t                          tmp_size;
+    herr_t                          ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &nrecord->addr);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->len, ctx->sizeof_size);
-    UINT32DECODE(raw, nrecord->filter_mask);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->obj_size, ctx->sizeof_size);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->id, ctx->sizeof_size);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &nrecord->addr) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->len = tmp_size;
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &tmp_u32) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->filter_mask = tmp_u32;
+
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->obj_size = tmp_size;
+
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->id = tmp_size;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5HF__huge_bt2_filt_indir_decode() */
 
 /*-------------------------------------------------------------------------
@@ -718,21 +746,28 @@ H5HF__huge_bt2_dir_encode(uint8_t *raw, const void *_nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5HF__huge_bt2_dir_decode(const uint8_t *raw, void *_nrecord, void *_ctx)
+H5HF__huge_bt2_dir_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void *_ctx)
 {
     H5HF_huge_bt2_ctx_t     *ctx     = (H5HF_huge_bt2_ctx_t *)_ctx; /* Callback context structure */
     H5HF_huge_bt2_dir_rec_t *nrecord = (H5HF_huge_bt2_dir_rec_t *)_nrecord;
+    size_t                   tmp_size;
+    herr_t                   ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &nrecord->addr);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->len, ctx->sizeof_size);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &nrecord->addr) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->len = tmp_size;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5HF__huge_bt2_dir_decode() */
 
 /*-------------------------------------------------------------------------
@@ -906,23 +941,37 @@ H5HF__huge_bt2_filt_dir_encode(uint8_t *raw, const void *_nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5HF__huge_bt2_filt_dir_decode(const uint8_t *raw, void *_nrecord, void *_ctx)
+H5HF__huge_bt2_filt_dir_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void *_ctx)
 {
     H5HF_huge_bt2_ctx_t          *ctx     = (H5HF_huge_bt2_ctx_t *)_ctx; /* Callback context structure */
     H5HF_huge_bt2_filt_dir_rec_t *nrecord = (H5HF_huge_bt2_filt_dir_rec_t *)_nrecord;
+    uint32_t                      tmp_u32;
+    size_t                        tmp_size;
+    herr_t                        ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
     /* Decode the record's fields */
-    H5F_addr_decode_len(ctx->sizeof_addr, &raw, &nrecord->addr);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->len, ctx->sizeof_size);
-    UINT32DECODE(raw, nrecord->filter_mask);
-    H5_DECODE_LENGTH_LEN(raw, nrecord->obj_size, ctx->sizeof_size);
+    if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &nrecord->addr) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->len = tmp_size;
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &tmp_u32) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->filter_mask = tmp_u32;
+
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_HEAP, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->obj_size = tmp_size;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5HF__huge_bt2_filt_dir_decode() */
 
 /*-------------------------------------------------------------------------

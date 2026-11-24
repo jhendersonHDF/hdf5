@@ -29,6 +29,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions                        */
+#include "H5bcursor.h"   /* Byte cursor                              */
 #include "H5ACprivate.h" /* Metadata Cache                           */
 #include "H5B2pkg.h"     /* B-Trees (Version 2)                      */
 #include "H5Eprivate.h"  /* Error Handling                           */
@@ -221,67 +222,86 @@ done:
  *-------------------------------------------------------------------------
  */
 static void *
-H5B2__cache_hdr_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void *_udata,
-                            bool H5_ATTR_UNUSED *dirty)
+H5B2__cache_hdr_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATTR_UNUSED *dirty)
 {
     H5B2_hdr_t          *hdr   = NULL; /* B-tree header */
     H5B2_hdr_cache_ud_t *udata = (H5B2_hdr_cache_ud_t *)_udata;
-    H5B2_create_t        cparam;                              /* B-tree creation parameters */
-    H5B2_subid_t         id;                                  /* ID of B-tree class, as found in file */
-    uint16_t             depth;                               /* Depth of B-tree */
-    uint32_t             stored_chksum;                       /* Stored metadata checksum value */
-    const uint8_t       *image     = (const uint8_t *)_image; /* Pointer into raw data buffer */
-    H5B2_hdr_t          *ret_value = NULL;                    /* Return value */
+    H5B2_create_t        cparam;        /* B-tree creation parameters */
+    H5B2_subid_t         id;            /* ID of B-tree class, as found in file */
+    H5_bcursor_t         byte_cursor;   /* Byte cursor for decoding */
+    uint16_t             depth;         /* Depth of B-tree */
+    uint32_t             stored_chksum; /* Stored metadata checksum value */
+    uint8_t              byte;          /* Temporary for storing values */
+    int                  memcmp_ret = 0;
+    H5B2_hdr_t          *ret_value  = NULL; /* Return value */
 
     FUNC_ENTER_PACKAGE
 
     /* Check arguments */
-    assert(image);
+    assert(_image);
     assert(udata);
 
     /* Allocate new B-tree header and reset cache info */
     if (NULL == (hdr = H5B2__hdr_alloc(udata->f)))
         HGOTO_ERROR(H5E_BTREE, H5E_CANTALLOC, NULL, "allocation failed for B-tree header");
 
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Magic number */
-    if (memcmp(image, H5B2_HDR_MAGIC, (size_t)H5_SIZEOF_MAGIC) != 0)
+    if (H5_bcursor_memcmp(&byte_cursor, H5B2_HDR_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (0 != memcmp_ret)
         HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree header signature");
-    image += H5_SIZEOF_MAGIC;
 
     /* Version */
-    if (*image++ != H5B2_HDR_VERSION)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (byte != H5B2_HDR_VERSION)
         HGOTO_ERROR(H5E_BTREE, H5E_BADRANGE, NULL, "wrong B-tree header version");
 
     /* B-tree class */
-    id = (H5B2_subid_t)*image++;
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    id = (H5B2_subid_t)byte;
     if (id >= H5B2_NUM_BTREE_ID)
         HGOTO_ERROR(H5E_BTREE, H5E_BADTYPE, NULL, "incorrect B-tree type");
 
     /* Node size (in bytes) */
-    UINT32DECODE(image, cparam.node_size);
+    if (H5_bcursor_decode_u32(&byte_cursor, &cparam.node_size) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Raw key size (in bytes) */
-    UINT16DECODE(image, cparam.rrec_size);
+    if (H5_bcursor_decode_u32(&byte_cursor, &cparam.rrec_size) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Depth of tree */
-    UINT16DECODE(image, depth);
+    if (H5_bcursor_decode_u16(&byte_cursor, &depth) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Split & merge %s */
-    cparam.split_percent = *image++;
-    cparam.merge_percent = *image++;
+    if (H5_bcursor_read(&byte_cursor, 1, &cparam.split_percent) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (H5_bcursor_read(&byte_cursor, 1, &cparam.merge_percent) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Root node pointer */
-    H5F_addr_decode(udata->f, (const uint8_t **)&image, &(hdr->root.addr));
-    UINT16DECODE(image, hdr->root.node_nrec);
-    H5F_DECODE_LENGTH(udata->f, image, hdr->root.all_nrec);
+    if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &(hdr->root.addr)) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (H5_bcursor_decode_u16(&byte_cursor, &hdr->root.node_nrec) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (H5_bcursor_decode_file_hsize(&byte_cursor, udata->f, &hdr->root.all_nrec) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* checksum verification already done in verify_chksum cb */
 
     /* Metadata checksum */
-    UINT32DECODE(image, stored_chksum);
+    if (H5_bcursor_decode_u32(&byte_cursor, &stored_chksum) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Sanity check */
-    assert((size_t)(image - (const uint8_t *)_image) == hdr->hdr_size);
+    if (H5_bcursor_get_position(&byte_cursor) != hdr->hdr_size)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "bad B-tree header size");
 
     /* Initialize B-tree header info */
     cparam.cls = H5B2_client_class_g[id];
@@ -292,7 +312,8 @@ H5B2__cache_hdr_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void 
     hdr->addr = udata->addr;
 
     /* Sanity check */
-    assert((size_t)(image - (const uint8_t *)_image) <= len);
+    if (H5_bcursor_get_position(&byte_cursor) > len)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "bad decoded B-tree header size");
 
     /* Set return value */
     ret_value = hdr;
@@ -591,18 +612,19 @@ done:
  *-------------------------------------------------------------------------
  */
 static void *
-H5B2__cache_int_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void *_udata,
-                            bool H5_ATTR_UNUSED *dirty)
+H5B2__cache_int_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATTR_UNUSED *dirty)
 {
     H5B2_internal_cache_ud_t *udata    = (H5B2_internal_cache_ud_t *)_udata; /* Pointer to user data */
     H5B2_internal_t          *internal = NULL;                               /* Internal node read */
     const uint8_t            *image    = (const uint8_t *)_image; /* Pointer into raw data buffer */
     uint8_t                  *native;                             /* Pointer to native record info */
     H5B2_node_ptr_t          *int_node_ptr;                       /* Pointer to node pointer info */
+    H5_bcursor_t              byte_cursor;                        /* Byte cursor for decoding */
     uint32_t                  stored_chksum;                      /* Stored metadata checksum value */
     unsigned                  u;                                  /* Local index variable */
-    H5B2_internal_t          *ret_value = NULL;                   /* Return value */
-    int                       node_nrec = 0;
+    uint8_t                   byte;                               /* Temporary for storing values */
+    int                       memcmp_ret = 0;
+    H5B2_internal_t          *ret_value  = NULL; /* Return value */
 
     FUNC_ENTER_PACKAGE
 
@@ -623,17 +645,25 @@ H5B2__cache_int_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void 
     internal->parent       = udata->parent;
     internal->shadow_epoch = udata->hdr->shadow_epoch;
 
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Magic number */
-    if (memcmp(image, H5B2_INT_MAGIC, (size_t)H5_SIZEOF_MAGIC) != 0)
+    if (H5_bcursor_memcmp(&byte_cursor, H5B2_INT_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (0 != memcmp_ret)
         HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree internal node signature");
-    image += H5_SIZEOF_MAGIC;
 
     /* Version */
-    if (*image++ != H5B2_INT_VERSION)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (byte != H5B2_INT_VERSION)
         HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree internal node version");
 
     /* B-tree type */
-    if (*image++ != (uint8_t)udata->hdr->cls->id)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if ((H5B2_subid_t)byte != udata->hdr->cls->id)
         HGOTO_ERROR(H5E_BTREE, H5E_BADTYPE, NULL, "incorrect B-tree type");
 
     /* Allocate space for the native keys in memory */
@@ -656,24 +686,32 @@ H5B2__cache_int_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void 
     native = internal->int_native;
     for (u = 0; u < internal->nrec; u++) {
         /* Decode record */
-        if ((udata->hdr->cls->decode)(image, native, udata->hdr->cb_ctx) < 0)
+        if ((udata->hdr->cls->decode)(&byte_cursor, native, udata->hdr->cb_ctx) < 0)
             HGOTO_ERROR(H5E_BTREE, H5E_CANTDECODE, NULL, "unable to decode B-tree record");
 
         /* Move to next record */
-        image += udata->hdr->rrec_size;
         native += udata->hdr->cls->nrec_size;
     } /* end for */
 
     /* Deserialize node pointers for internal node */
     int_node_ptr = internal->node_ptrs;
     for (u = 0; u < (unsigned)(internal->nrec + 1); u++) {
+        uint64_t tmp_u64;
+
         /* Decode node pointer */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &(int_node_ptr->addr));
-        UINT64DECODE_VAR(image, node_nrec, udata->hdr->max_nrec_size);
-        H5_CHECKED_ASSIGN(int_node_ptr->node_nrec, uint16_t, node_nrec, int);
-        if (udata->depth > 1)
-            UINT64DECODE_VAR(image, int_node_ptr->all_nrec,
-                             udata->hdr->node_info[udata->depth - 1].cum_max_nrec_size);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &(int_node_ptr->addr)) < 0)
+            HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+
+        if (H5_bcursor_decode_var_u64(&byte_cursor, udata->hdr->max_nrec_size, &tmp_u64) < 0)
+            HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        H5_CHECKED_ASSIGN(int_node_ptr->node_nrec, uint16_t, tmp_u64, uint64_t);
+
+        if (udata->depth > 1) {
+            if (H5_bcursor_decode_var_u64(&byte_cursor, udata->hdr->node_info[udata->depth - 1].cum_max_nrec_size,
+                    &tmp_u64) < 0)
+                HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+            H5_CHECKED_ASSIGN(int_node_ptr->all_nrec, hsize_t, tmp_u64, uint64_t);
+        }
         else
             int_node_ptr->all_nrec = int_node_ptr->node_nrec;
 
@@ -684,10 +722,12 @@ H5B2__cache_int_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void 
     /* checksum verification already done in verify_chksum cb */
 
     /* Metadata checksum */
-    UINT32DECODE(image, stored_chksum);
+    if (H5_bcursor_decode_u32(&byte_cursor, &stored_chksum) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Sanity check parsing */
-    assert((size_t)(image - (const uint8_t *)_image) <= len);
+    if (H5_bcursor_get_position(&byte_cursor) > len)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "bad decoded B-tree internal node size");
 
     /* Set return value */
     ret_value = internal;
@@ -991,21 +1031,22 @@ done:
  *-------------------------------------------------------------------------
  */
 static void *
-H5B2__cache_leaf_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void *_udata,
-                             bool H5_ATTR_UNUSED *dirty)
+H5B2__cache_leaf_deserialize(const void *_image, size_t len, void *_udata, bool H5_ATTR_UNUSED *dirty)
 {
     H5B2_leaf_cache_ud_t *udata = (H5B2_leaf_cache_ud_t *)_udata;
-    H5B2_leaf_t          *leaf  = NULL;                    /* Pointer to lead node loaded */
-    const uint8_t        *image = (const uint8_t *)_image; /* Pointer into raw data buffer */
-    uint8_t              *native;                          /* Pointer to native keys */
-    uint32_t              stored_chksum;                   /* Stored metadata checksum value */
-    unsigned              u;                               /* Local index variable */
-    H5B2_leaf_t          *ret_value = NULL;                /* Return value */
+    H5B2_leaf_t          *leaf  = NULL;  /* Pointer to lead node loaded */
+    H5_bcursor_t          byte_cursor;   /* Byte cursor for decoding */
+    uint8_t              *native;        /* Pointer to native keys */
+    uint32_t              stored_chksum; /* Stored metadata checksum value */
+    unsigned              u;             /* Local index variable */
+    uint8_t               byte;          /* Temporary for storing values */
+    int                   memcmp_ret = 0;
+    H5B2_leaf_t          *ret_value = NULL; /* Return value */
 
     FUNC_ENTER_PACKAGE
 
     /* Check arguments */
-    assert(image);
+    assert(_image);
     assert(udata);
 
     /* Allocate new leaf node and reset cache info */
@@ -1021,17 +1062,25 @@ H5B2__cache_leaf_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void
     leaf->parent       = udata->parent;
     leaf->shadow_epoch = udata->hdr->shadow_epoch;
 
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Magic number */
-    if (memcmp(image, H5B2_LEAF_MAGIC, (size_t)H5_SIZEOF_MAGIC) != 0)
+    if (H5_bcursor_memcmp(&byte_cursor, H5B2_LEAF_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (0 != memcmp_ret)
         HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "wrong B-tree leaf node signature");
-    image += H5_SIZEOF_MAGIC;
 
     /* Version */
-    if (*image++ != H5B2_LEAF_VERSION)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if (byte != H5B2_LEAF_VERSION)
         HGOTO_ERROR(H5E_BTREE, H5E_BADRANGE, NULL, "wrong B-tree leaf node version");
 
     /* B-tree type */
-    if (*image++ != (uint8_t)udata->hdr->cls->id)
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    if ((H5B2_subid_t)byte != udata->hdr->cls->id)
         HGOTO_ERROR(H5E_BTREE, H5E_BADTYPE, NULL, "incorrect B-tree type");
 
     /* Allocate space for the native keys in memory */
@@ -1045,24 +1094,26 @@ H5B2__cache_leaf_deserialize(const void *_image, size_t H5_ATTR_UNUSED len, void
     native = leaf->leaf_native;
     for (u = 0; u < leaf->nrec; u++) {
         /* Decode record */
-        if ((udata->hdr->cls->decode)(image, native, udata->hdr->cb_ctx) < 0)
+        if ((udata->hdr->cls->decode)(&byte_cursor, native, udata->hdr->cb_ctx) < 0)
             HGOTO_ERROR(H5E_BTREE, H5E_CANTENCODE, NULL, "unable to decode B-tree record");
 
         /* Move to next record */
-        image += udata->hdr->rrec_size;
         native += udata->hdr->cls->nrec_size;
     } /* end for */
 
     /* checksum verification already done in verify_chksum cb */
 
     /* Metadata checksum */
-    UINT32DECODE(image, stored_chksum);
+    if (H5_bcursor_decode_u32(&byte_cursor, &stored_chksum) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
     /* Sanity check parsing */
-    assert((size_t)(image - (const uint8_t *)_image) <= udata->hdr->node_size);
+    if (H5_bcursor_get_position(&byte_cursor) > udata->hdr->node_size)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "bad decoded B-tree leaf node size");
 
     /* Sanity check */
-    assert((size_t)(image - (const uint8_t *)_image) <= len);
+    if (H5_bcursor_get_position(&byte_cursor) > len)
+        HGOTO_ERROR(H5E_BTREE, H5E_BADVALUE, NULL, "bad decoded B-tree leaf node size");
 
     /* Set return value */
     ret_value = leaf;

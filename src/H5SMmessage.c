@@ -302,28 +302,53 @@ H5SM__message_encode(uint8_t *raw, const void *_nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 herr_t
-H5SM__message_decode(const uint8_t *raw, void *_nrecord, void *_ctx)
+H5SM__message_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void *_ctx)
 {
     H5SM_bt2_ctx_t *ctx     = (H5SM_bt2_ctx_t *)_ctx; /* Callback context structure */
     H5SM_sohm_t    *message = (H5SM_sohm_t *)_nrecord;
+    uint8_t         byte;
+    herr_t          ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
-    message->location = (H5SM_storage_loc_t)*raw++;
-    UINT32DECODE(raw, message->hash);
+    if (H5_bcursor_read(raw_byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    message->location = (H5SM_storage_loc_t)byte;
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &message->hash) < 0)
+        HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
     if (message->location == H5SM_IN_HEAP) {
-        UINT32DECODE(raw, message->u.heap_loc.ref_count);
-        H5MM_memcpy(message->u.heap_loc.fheap_id.id, raw, (size_t)H5O_FHEAP_ID_LEN);
+        uint32_t tmp_u32;
+
+        if (H5_bcursor_decode_u32(raw_byte_cursor, &tmp_u32) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        message->u.heap_loc.ref_count = tmp_u32;
+
+        if (H5_bcursor_read(raw_byte_cursor, (size_t)H5O_FHEAP_ID_LEN, message->u.heap_loc.fheap_id.id) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
     } /* end if */
     else {
-        assert(message->location == H5SM_IN_OH);
+        uint16_t tmp_u16;
 
-        raw++; /* reserved */
-        message->msg_type_id = *raw++;
-        UINT16DECODE(raw, message->u.mesg_loc.index);
-        H5F_addr_decode_len((size_t)ctx->sizeof_addr, &raw, &message->u.mesg_loc.oh_addr);
+        if (message->location != H5SM_IN_OH)
+            HGOTO_ERROR(H5E_SOHM, H5E_BADVALUE, FAIL, "invalid message location type");
+
+        if (H5_bcursor_skip(raw_byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+        if (H5_bcursor_read(raw_byte_cursor, 1, &byte) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        message->msg_type_id = byte;
+
+        if (H5_bcursor_decode_u16(raw_byte_cursor, &tmp_u16) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+        message->u.mesg_loc.index = (H5O_msg_crt_idx_t)tmp_u16;
+
+        if (H5_bcursor_decode_file_addr_len(raw_byte_cursor, ctx->sizeof_addr, &message->u.mesg_loc.oh_addr) < 0)
+            HGOTO_ERROR(H5E_SOHM, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
     } /* end else */
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5SM__message_decode */

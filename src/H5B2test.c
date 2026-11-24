@@ -26,6 +26,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions                        */
+#include "H5bcursor.h"   /* Byte cursor                              */
 #include "H5ACprivate.h" /* Metadata Cache                           */
 #include "H5B2pkg.h"     /* B-Trees (Version 2)                      */
 #include "H5Eprivate.h"  /* Error Handling                           */
@@ -59,14 +60,14 @@ static herr_t H5B2__test_dst_context(void *ctx);
 static herr_t H5B2__test_store(void *nrecord, const void *udata);
 static herr_t H5B2__test_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5B2__test_encode(uint8_t *raw, const void *nrecord, void *ctx);
-static herr_t H5B2__test_decode(const uint8_t *raw, void *nrecord, void *ctx);
+static herr_t H5B2__test_decode(H5_bcursor_t *raw_byte_cursor, void *nrecord, void *ctx);
 static herr_t H5B2__test_debug(FILE *stream, int indent, int fwidth, const void *record, const void *_udata);
 
 /* v2 B-tree driver callbacks for 'test2' B-trees */
 static herr_t H5B2__test2_store(void *nrecord, const void *udata);
 static herr_t H5B2__test2_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5B2__test2_encode(uint8_t *raw, const void *nrecord, void *ctx);
-static herr_t H5B2__test2_decode(const uint8_t *raw, void *nrecord, void *ctx);
+static herr_t H5B2__test2_decode(H5_bcursor_t *raw_byte_cursor, void *nrecord, void *ctx);
 static herr_t H5B2__test2_debug(FILE *stream, int indent, int fwidth, const void *record, const void *_udata);
 
 /*********************/
@@ -253,18 +254,23 @@ H5B2__test_encode(uint8_t *raw, const void *nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5B2__test_decode(const uint8_t *raw, void *nrecord, void *_ctx)
+H5B2__test_decode(H5_bcursor_t *raw_byte_cursor, void *nrecord, void *_ctx)
 {
     H5B2_test_ctx_t *ctx = (H5B2_test_ctx_t *)_ctx; /* Callback context structure */
+    size_t           tmp_size;
+    herr_t           ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
-    H5_DECODE_LENGTH_LEN(raw, *(hsize_t *)nrecord, ctx->sizeof_size);
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    *(hsize_t *)nrecord = tmp_size;
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5B2__test_decode() */
 
 /*-------------------------------------------------------------------------
@@ -367,19 +373,27 @@ H5B2__test2_encode(uint8_t *raw, const void *nrecord, void *_ctx)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5B2__test2_decode(const uint8_t *raw, void *nrecord, void *_ctx)
+H5B2__test2_decode(H5_bcursor_t *raw_byte_cursor, void *nrecord, void *_ctx)
 {
     H5B2_test_ctx_t *ctx = (H5B2_test_ctx_t *)_ctx; /* Callback context structure */
+    size_t           tmp_size;
+    herr_t           ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Sanity check */
     assert(ctx);
 
-    H5_DECODE_LENGTH_LEN(raw, ((H5B2_test_rec_t *)nrecord)->key, ctx->sizeof_size);
-    H5_DECODE_LENGTH_LEN(raw, ((H5B2_test_rec_t *)nrecord)->val, ctx->sizeof_size);
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    ((H5B2_test_rec_t *)nrecord)->key = tmp_size;
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_decode_len(raw_byte_cursor, ctx->sizeof_size, &tmp_size) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    ((H5B2_test_rec_t *)nrecord)->val = tmp_size;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5B2__test2_decode() */
 
 /*-------------------------------------------------------------------------

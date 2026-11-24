@@ -23,6 +23,7 @@
 #define H5B2private_H
 
 /* Private headers needed by this file */
+#include "H5bcursor.h"   /* Byte cursor                      */
 #include "H5ACprivate.h" /* Metadata cache                   */
 #include "H5Fprivate.h"  /* File access                      */
 
@@ -92,7 +93,7 @@ struct H5B2_class_t {
     herr_t (*compare)(const void *rec1, const void *rec2, int *result); /* Compare two native records */
     herr_t (*encode)(uint8_t *raw, const void *record,
                      void *ctx); /* Encode record from native form to disk storage form */
-    herr_t (*decode)(const uint8_t *raw, void *record,
+    herr_t (*decode)(H5_bcursor_t *raw_byte_cursor, void *record,
                      void *ctx); /* Decode record from disk storage form to native form */
     herr_t (*debug)(FILE *stream, int indent, int fwidth, /* Print a record for debugging */
                     const void *record, const void *ctx);

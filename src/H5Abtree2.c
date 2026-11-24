@@ -28,10 +28,11 @@
 /***********/
 /* Headers */
 /***********/
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Apkg.h"      /* Attributes	  			*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
-#include "H5MMprivate.h" /* Memory management			*/
+#include "H5private.h"   /* Generic Functions                    */
+#include "H5bcursor.h"   /* Byte cursor                          */
+#include "H5Apkg.h"      /* Attributes                           */
+#include "H5Eprivate.h"  /* Error handling                       */
+#include "H5MMprivate.h" /* Memory management                    */
 #include "H5SMprivate.h" /* Shared object header messages        */
 
 /****************/
@@ -72,7 +73,7 @@ typedef struct H5A_fh_ud_cmp_t {
 static herr_t H5A__dense_btree2_corder_store(void *native, const void *udata);
 static herr_t H5A__dense_btree2_corder_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5A__dense_btree2_corder_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5A__dense_btree2_corder_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5A__dense_btree2_corder_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5A__dense_btree2_corder_debug(FILE *stream, int indent, int fwidth, const void *record,
                                              const void *_udata);
 
@@ -80,7 +81,7 @@ static herr_t H5A__dense_btree2_corder_debug(FILE *stream, int indent, int fwidt
 static herr_t H5A__dense_btree2_name_store(void *native, const void *udata);
 static herr_t H5A__dense_btree2_name_compare(const void *rec1, const void *rec2, int *result);
 static herr_t H5A__dense_btree2_name_encode(uint8_t *raw, const void *native, void *ctx);
-static herr_t H5A__dense_btree2_name_decode(const uint8_t *raw, void *native, void *ctx);
+static herr_t H5A__dense_btree2_name_decode(H5_bcursor_t *raw_byte_cursor, void *native, void *ctx);
 static herr_t H5A__dense_btree2_name_debug(FILE *stream, int indent, int fwidth, const void *record,
                                            const void *_udata);
 
@@ -309,20 +310,30 @@ H5A__dense_btree2_name_encode(uint8_t *raw, const void *_nrecord, void H5_ATTR_U
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5A__dense_btree2_name_decode(const uint8_t *raw, void *_nrecord, void H5_ATTR_UNUSED *ctx)
+H5A__dense_btree2_name_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void H5_ATTR_UNUSED *ctx)
 {
     H5A_dense_bt2_name_rec_t *nrecord = (H5A_dense_bt2_name_rec_t *)_nrecord;
+    uint32_t                  tmp_u32;
+    herr_t                    ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Decode the record's fields */
-    H5MM_memcpy(nrecord->id.id, raw, (size_t)H5O_FHEAP_ID_LEN);
-    raw += H5O_FHEAP_ID_LEN;
-    nrecord->flags = *raw++;
-    UINT32DECODE(raw, nrecord->corder);
-    UINT32DECODE(raw, nrecord->hash);
+    if (H5_bcursor_read(raw_byte_cursor, (size_t)H5O_FHEAP_ID_LEN, nrecord->id.id) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_read(raw_byte_cursor, 1, &nrecord->flags) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &tmp_u32) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->corder = (H5O_msg_crt_idx_t)tmp_u32;
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &nrecord->hash) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5A__dense_btree2_name_decode() */
 
 /*-------------------------------------------------------------------------
@@ -446,19 +457,27 @@ H5A__dense_btree2_corder_encode(uint8_t *raw, const void *_nrecord, void H5_ATTR
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5A__dense_btree2_corder_decode(const uint8_t *raw, void *_nrecord, void H5_ATTR_UNUSED *ctx)
+H5A__dense_btree2_corder_decode(H5_bcursor_t *raw_byte_cursor, void *_nrecord, void H5_ATTR_UNUSED *ctx)
 {
     H5A_dense_bt2_corder_rec_t *nrecord = (H5A_dense_bt2_corder_rec_t *)_nrecord;
+    uint32_t                    tmp_u32;
+    herr_t                      ret_value = SUCCEED;
 
-    FUNC_ENTER_PACKAGE_NOERR
+    FUNC_ENTER_PACKAGE
 
     /* Decode the record's fields */
-    H5MM_memcpy(nrecord->id.id, raw, (size_t)H5O_FHEAP_ID_LEN);
-    raw += H5O_FHEAP_ID_LEN;
-    nrecord->flags = *raw++;
-    UINT32DECODE(raw, nrecord->corder);
+    if (H5_bcursor_read(raw_byte_cursor, (size_t)H5O_FHEAP_ID_LEN, nrecord->id.id) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+    if (H5_bcursor_read(raw_byte_cursor, 1, &nrecord->flags) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+
+    if (H5_bcursor_decode_u32(raw_byte_cursor, &tmp_u32) < 0)
+        HGOTO_ERROR(H5E_ATTR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+    nrecord->corder = (H5O_msg_crt_idx_t)tmp_u32;
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5A__dense_btree2_corder_decode() */
 
 /*-------------------------------------------------------------------------
