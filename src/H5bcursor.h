@@ -41,6 +41,12 @@ H5_DLL herr_t H5_bcursor_read(H5_bcursor_t *byte_cursor, size_t num_bytes, void 
 /* TODO: docs */
 H5_DLL herr_t H5_bcursor_memcmp(H5_bcursor_t *byte_cursor, const void *cmp_buf, size_t cmp_size, int *cmp_ret);
 
+/* TODO: docs */
+H5_DLL size_t H5_bcursor_strnlen(H5_bcursor_t *byte_cursor, size_t maxlen);
+
+/* TODO: docs */
+H5_DLL herr_t H5_bcursor_strncpy(H5_bcursor_t *byte_cursor, char *dest, size_t size);
+
 /* TODO: H5_bcursor_memcmp_and_skip? */
 
 /* TODO: docs */

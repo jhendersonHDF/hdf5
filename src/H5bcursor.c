@@ -100,6 +100,35 @@ H5_bcursor_memcmp(H5_bcursor_t *byte_cursor, const void *cmp_buf, size_t cmp_siz
 }
 
 /* TODO: docs */
+size_t
+H5_bcursor_strnlen(H5_bcursor_t *byte_cursor, size_t maxlen)
+{
+    size_t num_bytes_to_search;
+
+    num_bytes_to_search = (maxlen <= byte_cursor->buf_bytes_left) ? maxlen : byte_cursor->buf_bytes_left;
+
+    return strnlen((const char *)byte_cursor->buf_ptr, num_bytes_to_search);
+}
+
+/* TODO: docs */
+herr_t
+H5_bcursor_strncpy(H5_bcursor_t *byte_cursor, char *dest, size_t size)
+{
+    bool enough_space;
+
+    assert(byte_cursor && byte_cursor->buf_ptr);
+    assert(dest);
+
+    enough_space = (size <= byte_cursor->buf_bytes_left);
+    if (!enough_space)
+        return FAIL;
+
+    strncpy(dest, (const char *)byte_cursor->buf_ptr, size);
+
+    return SUCCEED;
+}
+
+/* TODO: docs */
 herr_t
 H5_bcursor_skip(H5_bcursor_t *byte_cursor, size_t num_bytes)
 {
