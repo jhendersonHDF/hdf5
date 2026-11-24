@@ -37,7 +37,7 @@ H5_bcursor_init(const uint8_t *buf, size_t buf_size, H5_bcursor_t *byte_cursor)
 
 /* TODO: docs */
 const uint8_t *
-H5_bcursor_get_buf(H5_bcursor_t *byte_cursor)
+H5_bcursor_get_buf_ptr(H5_bcursor_t *byte_cursor)
 {
     return byte_cursor->buf_ptr;
 }

@@ -192,7 +192,7 @@ H5G__cache_node_deserialize(const void *_image, size_t len, void *_udata, bool H
 
     /* Entries */
     /* TODO: make safer */
-    image = H5_bcursor_get_buf(&byte_cursor);
+    image = H5_bcursor_get_buf_ptr(&byte_cursor);
     if (H5G__ent_decode_vec(f, &image, byte_cursor.buf_end, sym->entry, sym->nsyms) < 0)
         HGOTO_ERROR(H5E_SYM, H5E_CANTLOAD, NULL, "unable to decode symbol table entries");
 

@@ -29,12 +29,13 @@
 /***********/
 /* Headers */
 /***********/
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
-#include "H5Fpkg.h"      /* File access				*/
-#include "H5FDprivate.h" /* File drivers				*/
+#include "H5private.h"   /* Generic Functions                    */
+#include "H5bcursor.h"   /* Byte cursor                          */
+#include "H5Eprivate.h"  /* Error handling                       */
+#include "H5Fpkg.h"      /* File access                          */
+#include "H5FDprivate.h" /* File drivers                         */
 #include "H5FLprivate.h" /* Free Lists                           */
-#include "H5Gpkg.h"      /* Groups		  		*/
+#include "H5Gpkg.h"      /* Groups                               */
 #include "H5MMprivate.h" /* Memory management                    */
 
 /****************/
@@ -72,10 +73,10 @@ static herr_t H5F__cache_drvrinfo_serialize(const H5F_t *f, void *image, size_t 
 static herr_t H5F__cache_drvrinfo_free_icr(void *thing);
 
 /* Local encode/decode routines */
-static herr_t H5F__superblock_prefix_decode(H5F_super_t *sblock, const uint8_t **image_ref, size_t len,
+static herr_t H5F__superblock_prefix_decode(H5F_super_t *sblock, H5_bcursor_t *superblock_byte_cursor,
                                             const H5F_superblock_cache_ud_t *udata, bool extend_eoa);
-static herr_t H5F__drvrinfo_prefix_decode(H5O_drvinfo_t *drvinfo, char *drv_name, const uint8_t **image_ref,
-                                          size_t len, H5F_drvrinfo_cache_ud_t *udata, bool extend_eoa);
+static herr_t H5F__drvrinfo_prefix_decode(H5O_drvinfo_t *drvinfo, char *drv_name, H5_bcursor_t *drvrinfo_byte_cursor,
+                                          H5F_drvrinfo_cache_ud_t *udata, bool extend_eoa);
 
 /*********************/
 /* Package Variables */
@@ -137,51 +138,56 @@ H5FL_EXTERN(H5F_super_t);
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5F__superblock_prefix_decode(H5F_super_t *sblock, const uint8_t **image_ref, size_t len,
+H5F__superblock_prefix_decode(H5F_super_t *sblock, H5_bcursor_t *superblock_byte_cursor,
                               const H5F_superblock_cache_ud_t *udata, bool extend_eoa)
 {
-    const uint8_t *image     = (const uint8_t *)*image_ref; /* Pointer into raw data buffer */
-    const uint8_t *end       = image + len - 1;             /* Pointer to end of buffer */
-    htri_t         ret_value = SUCCEED;
+    uint8_t byte;
+    htri_t  ret_value = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
     assert(sblock);
-    assert(image_ref);
-    assert(image);
+    assert(superblock_byte_cursor);
     assert(udata);
     assert(udata->f);
 
     /* Skip over signature (already checked when locating the superblock) */
-    if (H5_IS_BUFFER_OVERFLOW(image, H5F_SIGNATURE_LEN, end))
+    if (H5_bcursor_skip(superblock_byte_cursor, H5F_SIGNATURE_LEN) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    image += H5F_SIGNATURE_LEN;
 
     /* Superblock version */
-    if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
+    if (H5_bcursor_read(superblock_byte_cursor, 1, &byte) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    sblock->super_vers = *image++;
+    sblock->super_vers = byte;
     if (sblock->super_vers > HDF5_SUPERBLOCK_VERSION_LATEST)
         HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, FAIL, "bad superblock version number");
 
     /* Size check */
-    if (((size_t)(image - (const uint8_t *)*image_ref)) != H5F_SUPERBLOCK_FIXED_SIZE)
+    if (H5_bcursor_get_position(superblock_byte_cursor) != H5F_SUPERBLOCK_FIXED_SIZE)
         HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, FAIL, "bad superblock (fixed) size");
 
     /* Determine the size of addresses & size of offsets, for computing the
      * variable-sized portion of the superblock.
      */
     if (sblock->super_vers < HDF5_SUPERBLOCK_VERSION_2) {
-        if (H5_IS_BUFFER_OVERFLOW(image, 6, end))
+        const uint8_t *tmp_ptr;
+
+        if (!H5_bcursor_has_num_bytes(superblock_byte_cursor, 6))
             HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        sblock->sizeof_addr = image[4];
-        sblock->sizeof_size = image[5];
+
+        tmp_ptr = H5_bcursor_get_buf_ptr(superblock_byte_cursor);
+        sblock->sizeof_addr = tmp_ptr[4];
+        sblock->sizeof_size = tmp_ptr[5];
     }
     else {
-        if (H5_IS_BUFFER_OVERFLOW(image, 2, end))
+        const uint8_t *tmp_ptr;
+
+        if (!H5_bcursor_has_num_bytes(superblock_byte_cursor, 2))
             HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        sblock->sizeof_addr = image[0];
-        sblock->sizeof_size = image[1];
+
+        tmp_ptr = H5_bcursor_get_buf_ptr(superblock_byte_cursor);
+        sblock->sizeof_addr = tmp_ptr[0];
+        sblock->sizeof_size = tmp_ptr[1];
     }
 
     if (sblock->sizeof_addr != 2 && sblock->sizeof_addr != 4 && sblock->sizeof_addr != 8 &&
@@ -206,9 +212,6 @@ H5F__superblock_prefix_decode(H5F_super_t *sblock, const uint8_t **image_ref, si
             HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, FAIL, "set end of space allocation request failed");
     }
 
-    /* Update the image buffer pointer */
-    *image_ref = image;
-
 done:
     FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5F__superblock_prefix_decode() */
@@ -222,46 +225,42 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5F__drvrinfo_prefix_decode(H5O_drvinfo_t *drvrinfo, char *drv_name, const uint8_t **image_ref, size_t len,
+H5F__drvrinfo_prefix_decode(H5O_drvinfo_t *drvrinfo, char *drv_name, H5_bcursor_t *drvrinfo_byte_cursor,
                             H5F_drvrinfo_cache_ud_t *udata, bool extend_eoa)
 {
-    const uint8_t *image = (const uint8_t *)*image_ref; /* Pointer into raw data buffer */
-    const uint8_t *end   = image + len - 1;             /* Pointer to end of buffer */
-    unsigned       drv_vers;                            /* Version of driver info block */
-    herr_t         ret_value = SUCCEED;
+    unsigned drv_vers; /* Version of driver info block */
+    uint32_t tmp_u32;
+    uint8_t  byte;
+    herr_t   ret_value = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
     assert(drvrinfo);
-    assert(image_ref);
-    assert(image);
+    assert(drvrinfo_byte_cursor);
     assert(udata);
     assert(udata->f);
 
     /* Version number */
-    if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
+    if (H5_bcursor_read(drvrinfo_byte_cursor, 1, &byte) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    drv_vers = *image++;
+    drv_vers = byte;
     if (drv_vers != HDF5_DRIVERINFO_VERSION_0)
         HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, FAIL, "bad driver information block version number");
 
     /* Reserved bytes */
-    if (H5_IS_BUFFER_OVERFLOW(image, 3, end))
+    if (H5_bcursor_skip(drvrinfo_byte_cursor, 3) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    image += 3;
 
     /* Driver info size */
-    if (H5_IS_BUFFER_OVERFLOW(image, 4, end))
+    if (H5_bcursor_decode_u32(drvrinfo_byte_cursor, &tmp_u32) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    UINT32DECODE(image, drvrinfo->len);
+    drvrinfo->len = tmp_u32;
 
     /* Driver name and/or version */
     if (drv_name) {
-        if (H5_IS_BUFFER_OVERFLOW(image, 8, end))
+        if (H5_bcursor_read(drvrinfo_byte_cursor, 8, drv_name) < 0)
             HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        H5MM_memcpy(drv_name, (const char *)image, (size_t)8);
         drv_name[8] = '\0';
-        image += 8; /* advance past name/version */
     }
 
     /* Extend the EOA if required so that we can read the complete driver info block */
@@ -282,9 +281,6 @@ H5F__drvrinfo_prefix_decode(H5O_drvinfo_t *drvrinfo, char *drv_name, const uint8
             if (H5FD_set_eoa(udata->f->shared->lf, H5FD_MEM_SUPER, min_eoa) < 0)
                 HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, FAIL, "set end of space allocation request failed");
     }
-
-    /* Update the image buffer pointer */
-    *image_ref = image;
 
 done:
     FUNC_LEAVE_NOAPI(ret_value)
@@ -323,21 +319,24 @@ static herr_t
 H5F__cache_superblock_get_final_load_size(const void *_image, size_t image_len, void *_udata,
                                           size_t *actual_len)
 {
-    const uint8_t             *image = _image;                              /* Pointer into raw data buffer */
     H5F_superblock_cache_ud_t *udata = (H5F_superblock_cache_ud_t *)_udata; /* User data */
-    H5F_super_t                sblock;                                      /* Temporary file superblock */
+    H5_bcursor_t               byte_cursor;
+    H5F_super_t                sblock; /* Temporary file superblock */
     htri_t                     ret_value = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
-    assert(image);
+    assert(_image);
     assert(udata);
     assert(actual_len);
     assert(*actual_len == image_len);
     assert(image_len >= H5F_SUPERBLOCK_FIXED_SIZE + 6);
 
+    if (H5_bcursor_init(_image, image_len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, FAIL, "can't initialize byte cursor for decoding");
+
     /* Deserialize the file superblock's prefix */
-    if (H5F__superblock_prefix_decode(&sblock, &image, image_len, udata, true) < 0)
+    if (H5F__superblock_prefix_decode(&sblock, &byte_cursor, udata, true) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, FAIL, "can't decode file superblock prefix");
 
     /* Save the version to be used in verify_chksum callback */
@@ -406,6 +405,9 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
     H5F_superblock_cache_ud_t *udata     = (H5F_superblock_cache_ud_t *)_udata; /* User data */
     const uint8_t             *image     = _image;          /* Pointer into raw data buffer */
     const uint8_t             *end       = image + len - 1; /* Pointer to end of buffer */
+    H5_bcursor_t               byte_cursor;
+    uint16_t                   tmp_u16;
+    uint8_t                    byte;
     H5F_super_t               *ret_value = NULL;
 
     FUNC_ENTER_PACKAGE
@@ -419,8 +421,11 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
     if (NULL == (sblock = H5FL_CALLOC(H5F_super_t)))
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
 
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Deserialize the file superblock's prefix */
-    if (H5F__superblock_prefix_decode(sblock, &image, len, udata, false) < 0)
+    if (H5F__superblock_prefix_decode(sblock, &byte_cursor, udata, false) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, NULL, "can't decode file superblock prefix");
 
     /* Check for older version of superblock format */
@@ -431,57 +436,53 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
         unsigned chunk_btree_k; /* B-tree chunk internal node 'K' value */
 
         /* Freespace version (hard-wired) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        if (HDF5_FREESPACE_VERSION != *image++)
+        if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        if (HDF5_FREESPACE_VERSION != byte)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad free space version number");
 
         /* Root group version number (hard-wired) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        if (HDF5_OBJECTDIR_VERSION != *image++)
+        if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        if (HDF5_OBJECTDIR_VERSION != byte)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad object directory version number");
 
         /* Skip over reserved byte */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Shared header version number (hard-wired) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        if (HDF5_SHAREDHEADER_VERSION != *image++)
+        if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        if (HDF5_SHAREDHEADER_VERSION != byte)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad shared-header format version number");
 
         /* Skip over size of file addresses (already decoded) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         udata->f->shared->sizeof_addr = sblock->sizeof_addr; /* Keep a local copy also */
 
         /* Skip over size of file sizes (already decoded) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         udata->f->shared->sizeof_size = sblock->sizeof_size; /* Keep a local copy also */
 
         /* Skip over reserved byte */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Various B-tree sizes */
-        if (H5_IS_BUFFER_OVERFLOW(image, 2, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        UINT16DECODE(image, sym_leaf_k);
+        if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        sym_leaf_k = tmp_u16;
         if (sym_leaf_k == 0)
             HGOTO_ERROR(H5E_FILE, H5E_BADRANGE, NULL, "bad symbol table leaf node 1/2 rank");
         udata->sym_leaf_k = sym_leaf_k; /* Keep a local copy also */
 
         /* Need 'get' call to set other array values */
-        if (H5_IS_BUFFER_OVERFLOW(image, 2, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        UINT16DECODE(image, snode_btree_k);
+        if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        snode_btree_k = tmp_u16;
         if (snode_btree_k == 0)
             HGOTO_ERROR(H5E_FILE, H5E_BADRANGE, NULL, "bad 1/2 rank for btree internal nodes");
         udata->btree_k[H5B_SNODE_ID] = snode_btree_k;
@@ -491,9 +492,8 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
          */
 
         /* File status flags (not really used yet) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 4, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-        UINT32DECODE(image, status_flags);
+        if (H5_bcursor_decode_u32(&byte_cursor, &status_flags) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (status_flags > 255)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad superblock status flags");
         sblock->status_flags = (uint8_t)status_flags;
@@ -504,16 +504,15 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
          * storage B-tree internal 'K' value
          */
         if (sblock->super_vers > HDF5_SUPERBLOCK_VERSION_DEF) {
-            if (H5_IS_BUFFER_OVERFLOW(image, 2, end))
-                HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-            UINT16DECODE(image, chunk_btree_k);
+            if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
+                HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+            chunk_btree_k = tmp_u16;
 
             /* Reserved bytes are present only in version 1 */
             if (sblock->super_vers == HDF5_SUPERBLOCK_VERSION_1) {
                 /* Reserved */
-                if (H5_IS_BUFFER_OVERFLOW(image, 2, end))
-                    HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-                image += 2;
+                if (H5_bcursor_skip(&byte_cursor, 2) < 0)
+                    HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
             }
         }
         else
@@ -522,27 +521,27 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
 
         /* Remainder of "variable-sized" portion of superblock */
 
-        /* Check whether the image pointer will be out of bounds */
-        if (H5_IS_BUFFER_OVERFLOW(image, H5F_sizeof_addr(udata->f) * 4, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-
         /* Get and verify base address, delay additional verification */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->base_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->base_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (!H5_addr_defined(sblock->base_addr))
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "base address is undefined");
 
         /* Get extension address, delay verification until stored eof is avail */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->ext_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->ext_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Get and verify stored eof */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &udata->stored_eof /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &udata->stored_eof) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (!H5_addr_defined(udata->stored_eof))
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "stored EOF address is undefined");
         if (udata->stored_eof == 0)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "stored EOF address cannot be 0");
 
         /* Get driver address */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->driver_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->driver_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (H5_addr_defined(sblock->driver_addr) && sblock->driver_addr >= udata->stored_eof)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "driver info block address exceeds end of file");
 
@@ -560,7 +559,9 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
                         "can't allocate space for root group symbol table entry");
 
         /* Decode the root group symbol table entry */
-        if (H5G_ent_decode(udata->f, (const uint8_t **)&image, sblock->root_ent, end) < 0)
+        /* TODO: make safer */
+        image = H5_bcursor_get_buf_ptr(&byte_cursor);
+        if (H5G_ent_decode(udata->f, &image, sblock->root_ent, end) < 0)
             HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, NULL, "can't decode root group symbol table entry");
 
         /* Set the root group address to the correct value */
@@ -583,44 +584,43 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
         uint32_t read_chksum; /* Checksum read from file  */
 
         /* Skip over size of file addresses (already decoded) */
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         udata->f->shared->sizeof_addr = sblock->sizeof_addr; /* Keep a local copy also */
         /* Skip over size of file sizes (already decoded) */
-        image++;
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         udata->f->shared->sizeof_size = sblock->sizeof_size; /* Keep a local copy also */
 
-        /* Check whether the image pointer is out of bounds */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-
         /* File status flags (not really used yet) */
-        sblock->status_flags = *image++;
+        if (H5_bcursor_read(&byte_cursor, 1, &sblock->status_flags) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (sblock->status_flags & ~H5F_SUPER_ALL_FLAGS)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad flag value for superblock");
-
-        /* Check whether the image pointer will be out of bounds */
-        if (H5_IS_BUFFER_OVERFLOW(image, H5F_SIZEOF_ADDR(udata->f) * 4, end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
 
         /* Base, superblock extension, end of file & root group object header addresses */
 
         /* Get and verify base address, delay additional verification */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->base_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->base_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (!H5_addr_defined(sblock->base_addr))
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "base address is undefined");
 
         /* Get extension address, delay verification until stored eof is avail */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->ext_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->ext_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Get and verify stored eof */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &udata->stored_eof /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &udata->stored_eof) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (!H5_addr_defined(udata->stored_eof))
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "stored EOF address is undefined");
         if (udata->stored_eof == 0)
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "stored EOF address cannot be 0");
 
         /* Get and verify root address */
-        H5F_addr_decode(udata->f, (const uint8_t **)&image, &sblock->root_addr /*out*/);
+        if (H5_bcursor_decode_file_addr(&byte_cursor, udata->f, &sblock->root_addr) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
         if (!H5_addr_defined(sblock->root_addr))
             HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "root address is undefined");
         if (sblock->root_addr == 0)
@@ -640,12 +640,9 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
 
         /* checksum verification already done in verify_chksum cb */
 
-        /* Check whether the image pointer will be out of bounds */
-        if (H5_IS_BUFFER_OVERFLOW(image, sizeof(uint32_t), end))
-            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "image pointer is out of bounds");
-
         /* Decode checksum */
-        UINT32DECODE(image, read_chksum);
+        if (H5_bcursor_decode_u32(&byte_cursor, &read_chksum) < 0)
+            HGOTO_ERROR(H5E_FILE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* The Driver Information Block may not appear with the version
          * 2 super block.  Thus we set the driver_addr field of the in
@@ -656,8 +653,8 @@ H5F__cache_superblock_deserialize(const void *_image, size_t len, void *_udata, 
     }
 
     /* Size check */
-    if ((size_t)(image - (const uint8_t *)_image) > len)
-        HDONE_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad decoded superblock size");
+    if (H5_bcursor_get_position(&byte_cursor) > len)
+        HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad decoded superblock size");
 
     ret_value = sblock;
 
@@ -887,21 +884,24 @@ static herr_t
 H5F__cache_drvrinfo_get_final_load_size(const void *_image, size_t image_len, void *_udata,
                                         size_t *actual_len)
 {
-    const uint8_t           *image = _image;                            /* Pointer into raw data buffer */
     H5F_drvrinfo_cache_ud_t *udata = (H5F_drvrinfo_cache_ud_t *)_udata; /* User data */
     H5O_drvinfo_t            drvrinfo;                                  /* Driver info */
+    H5_bcursor_t             byte_cursor;
     herr_t                   ret_value = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
-    assert(image);
+    assert(_image);
     assert(udata);
     assert(actual_len);
     assert(*actual_len == image_len);
     assert(image_len == H5F_DRVINFOBLOCK_HDR_SIZE);
 
+    if (H5_bcursor_init(_image, image_len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, FAIL, "can't initialize byte cursor for decoding");
+
     /* Deserialize the file driver info's prefix */
-    if (H5F__drvrinfo_prefix_decode(&drvrinfo, NULL, &image, image_len, udata, true) < 0)
+    if (H5F__drvrinfo_prefix_decode(&drvrinfo, NULL, &byte_cursor, udata, true) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, FAIL, "can't decode file driver info prefix");
 
     /* Set the final size for the cache image */
@@ -925,13 +925,13 @@ H5F__cache_drvrinfo_deserialize(const void *_image, size_t len, void *_udata, bo
 {
     H5O_drvinfo_t           *drvinfo = NULL;                              /* Driver info */
     H5F_drvrinfo_cache_ud_t *udata   = (H5F_drvrinfo_cache_ud_t *)_udata; /* User data */
-    const uint8_t           *image   = _image;                            /* Pointer into raw data buffer */
-    char                     drv_name[9];                                 /* Name of driver */
+    H5_bcursor_t             byte_cursor;
+    char                     drv_name[9]; /* Name of driver */
     H5O_drvinfo_t           *ret_value = NULL;
 
     FUNC_ENTER_PACKAGE
 
-    assert(image);
+    assert(_image);
     assert(len >= H5F_DRVINFOBLOCK_HDR_SIZE);
     assert(udata);
     assert(udata->f);
@@ -940,19 +940,21 @@ H5F__cache_drvrinfo_deserialize(const void *_image, size_t len, void *_udata, bo
     if (NULL == (drvinfo = (H5O_drvinfo_t *)H5MM_calloc(sizeof(H5O_drvinfo_t))))
         HGOTO_ERROR(H5E_FILE, H5E_CANTALLOC, NULL, "memory allocation failed for driver info message");
 
-    /* Deserialize the file driver info's prefix */
-    if (H5F__drvrinfo_prefix_decode(drvinfo, drv_name, &image, len, udata, false) < 0)
-        HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, NULL, "can't decode file driver info prefix");
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
 
-    /* Sanity check */
-    assert(len == (H5F_DRVINFOBLOCK_HDR_SIZE + drvinfo->len));
+    /* Deserialize the file driver info's prefix */
+    if (H5F__drvrinfo_prefix_decode(drvinfo, drv_name, &byte_cursor, udata, false) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, NULL, "can't decode file driver info prefix");
+    if (len != (H5F_DRVINFOBLOCK_HDR_SIZE + drvinfo->len))
+        HGOTO_ERROR(H5E_FILE, H5E_BADVALUE, NULL, "bad driver info block size");
 
     /* Validate and decode driver information */
-    if (H5FD_sb_load(udata->f->shared->lf, drv_name, image) < 0)
+    if (H5FD_sb_load(udata->f->shared->lf, drv_name, H5_bcursor_get_buf_ptr(&byte_cursor)) < 0)
         HGOTO_ERROR(H5E_FILE, H5E_CANTDECODE, NULL, "unable to decode driver information");
 
     /* Sanity check */
-    assert((size_t)(image - (const uint8_t *)_image) <= len);
+    assert(H5_bcursor_get_position(&byte_cursor) <= len);
 
     ret_value = drvinfo;
 
