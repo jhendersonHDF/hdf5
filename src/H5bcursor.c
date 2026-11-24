@@ -23,6 +23,7 @@ H5_bcursor_init(const uint8_t *buf, size_t buf_size, H5_bcursor_t *byte_cursor)
         return FAIL;
 
     byte_cursor->buf_ptr        = buf;
+    byte_cursor->buf_size       = buf_size;
     byte_cursor->buf_bytes_left = buf_size;
 
     /* TODO: account for SIZE_MAX / size unknown */
@@ -46,6 +47,14 @@ size_t
 H5_bcursor_get_num_bytes(H5_bcursor_t *byte_cursor)
 {
     return byte_cursor->buf_bytes_left;
+}
+
+/* TODO: docs */
+size_t
+H5_bcursor_get_position(H5_bcursor_t *byte_cursor)
+{
+    assert(byte_cursor->buf_bytes_left <= byte_cursor->buf_size);
+    return (byte_cursor->buf_size - byte_cursor->buf_bytes_left);
 }
 
 /* TODO: docs */

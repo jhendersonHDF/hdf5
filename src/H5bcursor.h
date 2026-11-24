@@ -19,6 +19,7 @@
 typedef struct H5_bcursor_t {
     const uint8_t *buf_ptr;
     const uint8_t *buf_end;
+    size_t         buf_size;
     size_t         buf_bytes_left;
 } H5_bcursor_t;
 
@@ -30,6 +31,9 @@ H5_DLL const uint8_t *H5_bcursor_get_buf(H5_bcursor_t *byte_cursor);
 
 /* TODO: docs */
 H5_DLL size_t H5_bcursor_get_num_bytes(H5_bcursor_t *byte_cursor);
+
+/* TODO: docs */
+H5_DLL size_t H5_bcursor_get_position(H5_bcursor_t *byte_cursor);
 
 /* TODO: docs */
 H5_DLL bool H5_bcursor_has_num_bytes(H5_bcursor_t *byte_cursor, size_t num_bytes);

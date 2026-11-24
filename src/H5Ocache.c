@@ -29,6 +29,7 @@
 /* Headers */
 /***********/
 #include "H5private.h"   /* Generic Functions           */
+#include "H5bcursor.h"   /* Byte cursor                 */
 #include "H5Eprivate.h"  /* Error handling              */
 #include "H5FLprivate.h" /* Free lists                  */
 #include "H5MMprivate.h" /* Memory management           */
@@ -992,14 +993,17 @@ done:
 static herr_t
 H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata)
 {
-    const uint8_t *image     = (const uint8_t *)_image; /* Pointer into raw data buffer */
-    const uint8_t *p_end     = image + len - 1;         /* End of image buffer */
-    H5O_t         *oh        = NULL;                    /* Object header read in */
-    herr_t         ret_value = SUCCEED;
+    H5_bcursor_t byte_cursor;
+    uint64_t     tmp_u64;
+    uint32_t     tmp_u32;
+    uint16_t     tmp_u16;
+    uint8_t      byte;
+    H5O_t       *oh         = NULL; /* Object header read in */
+    int          memcmp_ret = 0;
+    herr_t       ret_value  = SUCCEED;
 
     FUNC_ENTER_PACKAGE
 
-    assert(image);
     assert(udata);
 
     /* Allocate space for the new object header data structure */
@@ -1010,26 +1014,29 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
     oh->sizeof_size = H5F_SIZEOF_SIZE(udata->common.f);
     oh->sizeof_addr = H5F_SIZEOF_ADDR(udata->common.f);
 
+    if (H5_bcursor_init(_image, len, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_OHDR, H5E_CANTINIT, FAIL, "can't initialize byte cursor for decoding");
+
     /* Check for presence of magic number */
     /* (indicates version 2 or later) */
-    if (H5_IS_BUFFER_OVERFLOW(image, H5_SIZEOF_MAGIC, p_end))
+    if (H5_bcursor_memcmp(&byte_cursor, H5O_HDR_MAGIC, (size_t)H5_SIZEOF_MAGIC, &memcmp_ret) < 0)
         HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-    if (!memcmp(image, H5O_HDR_MAGIC, (size_t)H5_SIZEOF_MAGIC)) {
 
-        /* Magic number (bounds checked above) */
-        image += H5_SIZEOF_MAGIC;
+    if (0 == memcmp_ret) {
+
+        /* Magic number */
+        if (H5_bcursor_skip(&byte_cursor, H5_SIZEOF_MAGIC) < 0)
+            HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
 
         /* Version */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, p_end))
+        if (H5_bcursor_read(&byte_cursor, 1, &oh->version) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        oh->version = *image++;
         if (H5O_VERSION_2 != oh->version)
             HGOTO_ERROR(H5E_OHDR, H5E_VERSION, FAIL, "bad object header version number");
 
         /* Flags */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, p_end))
+        if (H5_bcursor_read(&byte_cursor, 1, &oh->flags) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        oh->flags = *image++;
         if (oh->flags & ~H5O_HDR_ALL_FLAGS)
             HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, FAIL, "unknown object header status flag(s)");
 
@@ -1040,16 +1047,17 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
         if (oh->flags & H5O_HDR_STORE_TIMES) {
             uint32_t tmp;
 
-            if (H5_IS_BUFFER_OVERFLOW(image, 4 + 4 + 4 + 4, p_end))
+            if (H5_bcursor_decode_u32(&byte_cursor, &tmp) < 0)
                 HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-
-            UINT32DECODE(image, tmp);
             oh->atime = (time_t)tmp;
-            UINT32DECODE(image, tmp);
+            if (H5_bcursor_decode_u32(&byte_cursor, &tmp) < 0)
+                HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
             oh->mtime = (time_t)tmp;
-            UINT32DECODE(image, tmp);
+            if (H5_bcursor_decode_u32(&byte_cursor, &tmp) < 0)
+                HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
             oh->ctime = (time_t)tmp;
-            UINT32DECODE(image, tmp);
+            if (H5_bcursor_decode_u32(&byte_cursor, &tmp) < 0)
+                HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
             oh->btime = (time_t)tmp;
         }
         else
@@ -1057,11 +1065,14 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
 
         /* Attribute fields */
         if (oh->flags & H5O_HDR_ATTR_STORE_PHASE_CHANGE) {
-            if (H5_IS_BUFFER_OVERFLOW(image, 2 + 2, p_end))
+            if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
                 HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+            oh->max_compact = tmp_u16;
 
-            UINT16DECODE(image, oh->max_compact);
-            UINT16DECODE(image, oh->min_dense);
+            if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
+                HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
+            oh->min_dense = tmp_u16;
+
             if (oh->max_compact < oh->min_dense)
                 HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, FAIL, "bad object header attribute phase change values");
         }
@@ -1073,27 +1084,27 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
         /* First chunk size */
         switch (oh->flags & H5O_HDR_CHUNK0_SIZE) {
             case 0: /* 1 byte size */
-                if (H5_IS_BUFFER_OVERFLOW(image, 1, p_end))
+                if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-                udata->chunk0_size = *image++;
+                udata->chunk0_size = byte;
                 break;
 
             case 1: /* 2 byte size */
-                if (H5_IS_BUFFER_OVERFLOW(image, 2, p_end))
+                if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-                UINT16DECODE(image, udata->chunk0_size);
+                udata->chunk0_size = tmp_u16;
                 break;
 
             case 2: /* 4 byte size */
-                if (H5_IS_BUFFER_OVERFLOW(image, 4, p_end))
+                if (H5_bcursor_decode_u32(&byte_cursor, &tmp_u32) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-                UINT32DECODE(image, udata->chunk0_size);
+                udata->chunk0_size = tmp_u32;
                 break;
 
             case 3: /* 8 byte size */
-                if (H5_IS_BUFFER_OVERFLOW(image, 8, p_end))
+                if (H5_bcursor_decode_u64(&byte_cursor, &tmp_u64) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-                UINT64DECODE(image, udata->chunk0_size);
+                udata->chunk0_size = tmp_u64;
                 break;
 
             default:
@@ -1104,9 +1115,8 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
     }
     else {
         /* Version */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, p_end))
+        if (H5_bcursor_read(&byte_cursor, 1, &oh->version) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        oh->version = *image++;
         if (H5O_VERSION_1 != oh->version)
             HGOTO_ERROR(H5E_OHDR, H5E_VERSION, FAIL, "bad object header version number");
 
@@ -1114,19 +1124,18 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
         oh->flags = H5O_CRT_OHDR_FLAGS_DEF;
 
         /* Reserved */
-        if (H5_IS_BUFFER_OVERFLOW(image, 1, p_end))
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        image++;
 
         /* Number of messages */
-        if (H5_IS_BUFFER_OVERFLOW(image, 2, p_end))
+        if (H5_bcursor_decode_u16(&byte_cursor, &tmp_u16) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        UINT16DECODE(image, udata->v1_pfx_nmesgs);
+        udata->v1_pfx_nmesgs = tmp_u16;
 
         /* Link count */
-        if (H5_IS_BUFFER_OVERFLOW(image, 4, p_end))
+        if (H5_bcursor_decode_u32(&byte_cursor, &tmp_u32) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        UINT32DECODE(image, oh->nlink);
+        oh->nlink = tmp_u32;
 
         /* Reset unused time fields */
         oh->atime = oh->mtime = oh->ctime = oh->btime = 0;
@@ -1136,21 +1145,21 @@ H5O__prefix_deserialize(const uint8_t *_image, size_t len, H5O_cache_ud_t *udata
         oh->min_dense   = 0;
 
         /* First chunk size */
-        if (H5_IS_BUFFER_OVERFLOW(image, 4, p_end))
+        if (H5_bcursor_decode_u32(&byte_cursor, &tmp_u32) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        UINT32DECODE(image, udata->chunk0_size);
+        udata->chunk0_size = tmp_u32;
+
         if ((udata->v1_pfx_nmesgs > 0 && udata->chunk0_size < H5O_SIZEOF_MSGHDR_OH(oh)) ||
             (udata->v1_pfx_nmesgs == 0 && udata->chunk0_size > 0))
             HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, FAIL, "bad object header chunk size");
 
         /* Reserved, in version 1 (for 8-byte alignment padding) */
-        if (H5_IS_BUFFER_OVERFLOW(image, 4, p_end))
+        if (H5_bcursor_skip(&byte_cursor, 4) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, FAIL, "ran off end of input buffer while decoding");
-        image += 4;
     }
 
     /* Verify object header prefix length */
-    if ((size_t)(image - _image) != (size_t)(H5O_SIZEOF_HDR(oh) - H5O_SIZEOF_CHKSUM_OH(oh)))
+    if (H5_bcursor_get_position(&byte_cursor) != (size_t)(H5O_SIZEOF_HDR(oh) - H5O_SIZEOF_CHKSUM_OH(oh)))
         HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, FAIL, "bad object header prefix length");
 
     /* Save the object header for later use in 'deserialize' callback */
@@ -1180,6 +1189,7 @@ H5O__chunk_deserialize(H5O_t *oh, haddr_t addr, size_t chunk_size, const uint8_t
 {
     const uint8_t *chunk_image = NULL;   /* Pointer into buffer to decode */
     const uint8_t *p_end       = NULL;   /* End of image buffer */
+    H5_bcursor_t   byte_cursor;          /* Byte cursor for decoding */
     uint8_t       *eom_ptr;              /* Pointer to end of messages for a chunk */
     unsigned       merged_null_msgs = 0; /* Number of null messages merged together */
     unsigned       chunkno;              /* Current chunk's index */
