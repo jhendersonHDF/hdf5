@@ -13,12 +13,13 @@
 #include "H5Omodule.h" /* This source code file is part of the H5O module */
 #define H5S_FRIEND     /*prevent warning from including H5Spkg.h */
 
-#include "H5private.h"   /* Generic Functions			*/
-#include "H5Dprivate.h"  /* Datasets				*/
-#include "H5Eprivate.h"  /* Error handling		  	*/
+#include "H5private.h"   /* Generic Functions                    */
+#include "H5bcursor.h"   /* Byte cursor                          */
+#include "H5Dprivate.h"  /* Datasets                             */
+#include "H5Eprivate.h"  /* Error handling                       */
 #include "H5FLprivate.h" /* Free lists                           */
-#include "H5Opkg.h"      /* Object headers		  	*/
-#include "H5Spkg.h"      /* Dataspaces 				*/
+#include "H5Opkg.h"      /* Object headers                       */
+#include "H5Spkg.h"      /* Dataspaces                           */
 
 /* PRIVATE PROTOTYPES */
 static void  *H5O__sdspace_decode(H5F_t *f, H5O_t *open_oh, unsigned mesg_flags, unsigned *ioflags,
@@ -105,11 +106,12 @@ static void *
 H5O__sdspace_decode(H5F_t *f, H5O_t H5_ATTR_UNUSED *open_oh, unsigned H5_ATTR_UNUSED mesg_flags,
                     unsigned H5_ATTR_UNUSED *ioflags, size_t p_size, const uint8_t *p)
 {
-    const uint8_t *p_end = p + p_size - 1; /* End of the p buffer */
-    H5S_extent_t  *sdim  = NULL;           /* New extent dimensionality structure */
-    unsigned       flags, version;
-    unsigned       i;
-    void          *ret_value = NULL; /* Return value */
+    H5S_extent_t *sdim  = NULL;           /* New extent dimensionality structure */
+    H5_bcursor_t  byte_cursor;
+    unsigned      flags, version;
+    unsigned      i;
+    uint8_t       byte;
+    void         *ret_value = NULL; /* Return value */
 
     FUNC_ENTER_PACKAGE
 
@@ -120,33 +122,36 @@ H5O__sdspace_decode(H5F_t *f, H5O_t H5_ATTR_UNUSED *open_oh, unsigned H5_ATTR_UN
         HGOTO_ERROR(H5E_DATASPACE, H5E_CANTALLOC, NULL, "dataspace structure allocation failed");
     sdim->type = H5S_NO_CLASS;
 
+    if (H5_bcursor_init(p, p_size, &byte_cursor) < 0)
+        HGOTO_ERROR(H5E_OHDR, H5E_CANTINIT, NULL, "can't initialize byte cursor for decoding");
+
     /* Check version */
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
-        HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    version = *p++;
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    version = byte;
 
     if (version < H5O_SDSPACE_VERSION_1 || version > H5O_SDSPACE_VERSION_2)
         HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, NULL, "wrong version number in dataspace message");
     sdim->version = version;
 
     /* Get rank */
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
-        HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    sdim->rank = *p++;
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    sdim->rank = byte;
 
     if (sdim->rank > H5S_MAX_RANK)
         HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, NULL, "simple dataspace dimensionality is too large");
 
     /* Get dataspace flags for later */
-    if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
-        HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-    flags = *p++;
+    if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+        HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+    flags = byte;
 
     /* Get or determine the type of the extent */
     if (version >= H5O_SDSPACE_VERSION_2) {
-        if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
-            HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-        sdim->type = (H5S_class_t)*p++;
+        if (H5_bcursor_read(&byte_cursor, 1, &byte) < 0)
+            HGOTO_ERROR(H5E_BTREE, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        sdim->type = (H5S_class_t)byte;
 
         if (sdim->type != H5S_SIMPLE && sdim->rank > 0)
             HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, NULL, "invalid rank for scalar or NULL dataspace");
@@ -161,40 +166,42 @@ H5O__sdspace_decode(H5F_t *f, H5O_t H5_ATTR_UNUSED *open_oh, unsigned H5_ATTR_UN
             sdim->type = H5S_SCALAR;
 
         /* Increment past reserved byte */
-        if (H5_IS_BUFFER_OVERFLOW(p, 1, p_end))
+        if (H5_bcursor_skip(&byte_cursor, 1) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-        p++;
     }
 
     /* Version 1 has 4 reserved bytes */
     if (version == H5O_SDSPACE_VERSION_1) {
-        if (H5_IS_BUFFER_OVERFLOW(p, 4, p_end))
+        if (H5_bcursor_skip(&byte_cursor, 4) < 0)
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
-        p += 4;
     }
 
     /* Decode dimension sizes */
     if (sdim->rank > 0) {
         /* Check that we have space to decode sdim->rank values */
-        if (H5_IS_BUFFER_OVERFLOW(p, (H5F_sizeof_size(f) * sdim->rank), p_end))
+        if (!H5_bcursor_has_num_bytes(&byte_cursor, H5F_sizeof_size(f) * sdim->rank))
             HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
         /* Sizes */
         if (NULL == (sdim->size = (hsize_t *)H5FL_ARR_MALLOC(hsize_t, (size_t)sdim->rank)))
             HGOTO_ERROR(H5E_RESOURCE, H5E_CANTALLOC, NULL, "memory allocation failed");
-        for (i = 0; i < sdim->rank; i++)
-            H5F_DECODE_LENGTH(f, p, sdim->size[i]);
+        for (i = 0; i < sdim->rank; i++) {
+            if (H5_bcursor_decode_file_hsize(&byte_cursor, f, &sdim->size[i]) < 0)
+                HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+        }
 
         if (flags & H5S_VALID_MAX) {
             /* Check that we have space to decode sdim->rank values */
-            if (H5_IS_BUFFER_OVERFLOW(p, (H5F_sizeof_size(f) * sdim->rank), p_end))
+            if (!H5_bcursor_has_num_bytes(&byte_cursor, H5F_sizeof_size(f) * sdim->rank))
                 HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
 
             /* Max sizes */
             if (NULL == (sdim->max = (hsize_t *)H5FL_ARR_MALLOC(hsize_t, (size_t)sdim->rank)))
                 HGOTO_ERROR(H5E_RESOURCE, H5E_CANTALLOC, NULL, "memory allocation failed");
             for (i = 0; i < sdim->rank; i++) {
-                H5F_DECODE_LENGTH(f, p, sdim->max[i]);
+                if (H5_bcursor_decode_file_hsize(&byte_cursor, f, &sdim->max[i]) < 0)
+                    HGOTO_ERROR(H5E_OHDR, H5E_OVERFLOW, NULL, "ran off end of input buffer while decoding");
+
                 if (sdim->size[i] > sdim->max[i])
                     HGOTO_ERROR(H5E_OHDR, H5E_BADVALUE, NULL,
                                 "dataspace dim %u size of %llu is greater than maxdim size of %llu", i,
